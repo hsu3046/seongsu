@@ -19,7 +19,8 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 button { color: inherit; }
 button, a { touch-action: manipulation; }
 button:disabled { cursor: wait; opacity: .55; }
-button:focus-visible, a:focus-visible { outline: 3px solid #bf764e; outline-offset: 4px; }
+button:focus, a:focus { outline: none; }
+.app[data-keyboard-navigation="true"] :is(button, a):focus-visible { outline: 3px solid #bf764e; outline-offset: 4px; }
 button { border: 0; }
 button svg { flex-shrink: 0; }
 [hidden] { display: none !important; }

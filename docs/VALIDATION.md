@@ -62,6 +62,7 @@ Vite emits a large-chunk warning for the game-engine chunk. The UI and engine ar
 - Phaser defers destruction to a game step. Cleanup wakes an already sleeping engine once so its pending destruction removes the canvas and releases the renderer.
 - Location detail entry stops automatic movement before pausing, preserving the exact position on return.
 - Resize now immediately recenters the camera on the player, avoiding a temporarily offscreen avatar after orientation/fullscreen changes.
+- Focus outlines now require explicit Tab navigation. Verified in the in-app browser: fullscreen exit and tool-button clicks leave no outline; Tab shows the keyboard focus ring, and a subsequent pointer click clears it. Production build passed.
 
 ## Limits
 

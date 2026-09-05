@@ -71,6 +71,7 @@ export default function App() {
   const [saveError, setSaveError] = useState(false);
   const [toast, setToast] = useState('');
   const [confirmReset, setConfirmReset] = useState(false);
+  const [keyboardNavigation, setKeyboardNavigation] = useState(false);
   const controller = useRef<WorldController | null>(null);
   const resetDialog = useRef<HTMLDialogElement>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
@@ -81,6 +82,15 @@ export default function App() {
   const detailPlace = findPlace(detailId);
   const paused = view !== 'explore' || confirmReset;
   const fullscreen = useMapFullscreen(view === 'explore');
+
+  useEffect(() => {
+    // Only Tab navigation needs a focus ring; movement keys and restored focus do not.
+    const keyboardFocus = (event: KeyboardEvent) => {
+      if (event.key === 'Tab') setKeyboardNavigation(true);
+    };
+    document.addEventListener('keydown', keyboardFocus);
+    return () => document.removeEventListener('keydown', keyboardFocus);
+  }, []);
 
   useEffect(() => {
     document.documentElement.lang = progress.locale;
@@ -149,7 +159,8 @@ export default function App() {
   };
   const goPassport = () => show('passport');
 
-  return <div className={'app locale-' + progress.locale + (fullscreen.active ? ' map-expanded' : '')} data-current-view={view}>
+  return <div className={'app locale-' + progress.locale + (fullscreen.active ? ' map-expanded' : '')} data-current-view={view}
+    data-keyboard-navigation={keyboardNavigation} onPointerDownCapture={() => setKeyboardNavigation(false)}>
     <header className="site-header" inert={fullscreen.active}>
       <button className="brand-button" onClick={() => show('explore')} aria-label="Seongsu Passport"><Wordmark /></button>
       <nav className="main-nav" aria-label={progress.locale === 'en' ? 'Main navigation' : 'メインナビゲーション'}>
