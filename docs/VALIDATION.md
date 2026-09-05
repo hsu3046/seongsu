@@ -1,0 +1,62 @@
+# Validation — 2026-09-05
+
+## Environment
+
+- macOS / Node 25.8.2 / npm 11.11.1.
+- Chrome 148.0.7778.97, headless Playwright.
+- Desktop: 1440×1040 and 1280×900.
+- Mobile browser emulation: 390×844, touch enabled. CDP touchStart/touchCancel used for contact input.
+- Japanese responsive checks: 320, 390, 768, 1440px widths.
+
+## Results
+
+| Check | Result |
+|---|---|
+| TypeScript strict + production build | PASS |
+| Node unit tests | 6 / 6 PASS |
+| Main browser suite | 14 desktop + 2 mobile checks PASS |
+| Input / lifecycle / responsive suite | 7 / 7 PASS |
+| Production preview: load, walk, Enter, first stamp | PASS |
+| Page exceptions | 0 in passing suites |
+
+The main browser suite walks the avatar to all five stops through the rendered UI, collects five unique stamps, reaches completion, opens the passport, changes language, reloads, restores favorites and progress, and verifies cancel/confirm reset. Reading a remote place cannot grant a stamp.
+
+Additional checks cover all time settings, the placeholder photo tabs, paused position stability, mobile path navigation, actual emulated touch contact and cancellation, and unavailable browser storage.
+
+The input suite verifies actual arrow-key motion, Enter interaction, collision with a building, cleared input after leaving a screen, zoom and recenter, simulated WebGL context loss and retry with exactly one replacement canvas, and responsive Japanese layouts.
+
+Raw results:
+
+- artifacts/browser-report.json
+- artifacts/interaction-report.json
+- artifacts/production-smoke.json
+- artifacts/desktop-final.png
+- artifacts/desktop.png, night.png, place.png, passport.png, complete.png
+- artifacts/mobile.png, mobile-playing.png, mobile-place.png, mobile-passport.png
+
+## Frame timing
+
+While the game was visible in desktop headless Chrome, 120 browser requestAnimationFrame intervals were recorded: median **8.3ms**, p95 **9.2ms**.
+
+These are browser scheduling intervals, not an independent measurement of Phaser draw completion, GPU time, native iOS/Android frame rate, thermals, or battery use. The engine is configured with a 60fps target; sustained 60fps on a mid-range physical device remains unverified.
+
+## Build size
+
+Latest build:
+
+- Main JavaScript: approximately 243 kB, 80 kB gzip.
+- Dynamically loaded world/Phaser chunk: approximately 1.21 MB, 322 kB gzip.
+- CSS: approximately 43 kB, 10 kB gzip.
+- Fonts are self-hosted local build assets.
+
+Vite emits a large-chunk warning for the game-engine chunk. The UI and engine are already split through dynamic import. This warning is documented rather than hidden by increasing the warning threshold.
+
+## Fixed during verification
+
+- Phaser ignores a native keyboard event already marked defaultPrevented. Browser scrolling is now suppressed by Phaser's own capture list, and the redundant earlier DOM keyboard handler was removed.
+- Phaser defers destruction to a game step. Cleanup wakes an already sleeping engine once so its pending destruction removes the canvas and releases the renderer.
+- Location detail entry stops automatic movement before pausing, preserving the exact position on return.
+
+## Limits
+
+No physical iPhone/Android testing, full accessibility conformance audit, real geographic-data validation, photography, 3D scanning, PWA offline reload test, native app export, remote analytics, or public deployment has been performed.
