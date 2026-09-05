@@ -22,6 +22,7 @@ tests/browser.mjs는 설치되어 있는 Playwright와 Chrome을 사용한다. �
 
     PLAYWRIGHT_MODULE_PATH=/path/to/existing/node_modules/playwright node tests/browser.mjs
     PLAYWRIGHT_MODULE_PATH=/path/to/existing/node_modules/playwright node tests/interaction.mjs
+    PLAYWRIGHT_MODULE_PATH=/path/to/existing/node_modules/playwright node tests/fullscreen.mjs
 
 DEMO_URL로 테스트할 로컬 주소를 바꿀 수 있다. 결과와 스크린샷은 Git에서 제외된 artifacts/에 기록한다. 테스트는 별도 브라우저 컨텍스트를 사용하므로 사용자가 열어놓은 브라우저의 여권을 초기화하지 않는다.
 
@@ -34,3 +35,11 @@ DEMO_URL로 테스트할 로컬 주소를 바꿀 수 있다. 결과와 스크린
 5. 다섯 장소를 완주하고 여권·즐겨찾기를 확인한다.
 6. 모바일에서 방향 패드를 누른 채 영역 밖으로 이동하거나 손가락을 취소해도 이동이 멈추는지 확인한다.
 7. 실제 iPhone 및 Android에서 렌더링·지속 성능을 별도 확인한다.
+8. 전체 화면 진입·종료 후 캐릭터 위치와 페이지 스크롤이 유지되는지, 가로로 돌렸을 때 맵이 화면을 채우는지 확인한다.
+9. 모바일 Map tools에서 시간대·확대·축소를 바꾸고 바깥을 탭해 닫는다. 전체 화면의 장소 진입·도장 수집도 확인한다.
+
+## Fullscreen support
+
+지원되는 브라우저에서는 Fullscreen API로 맵을 표시한다. API가 없거나 요청이 거절되면 브라우저 창을 채우는 보기로 전환하며 브라우저 주소창은 남을 수 있다. 같은 닫기 버튼으로 복귀한다. 실제 iOS Safari의 전체 화면·주소창·안전 영역 동작은 기기에서 별도로 확인해야 한다.
+
+구현은 [MDN requestFullscreen](https://developer.mozilla.org/en-US/docs/Web/API/Element/requestFullscreen)과 [fullscreenchange](https://developer.mozilla.org/en-US/docs/Web/API/Document/fullscreenchange_event)를 참고했다.

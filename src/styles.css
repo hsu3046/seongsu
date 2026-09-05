@@ -19,7 +19,8 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 button { color: inherit; }
 button, a { touch-action: manipulation; }
 button:disabled { cursor: wait; opacity: .55; }
-button:focus-visible, a:focus-visible { outline: 3px solid #bf764e; outline-offset: 4px; }
+button:focus, a:focus { outline: none; }
+.app[data-keyboard-navigation="true"] :is(button, a):focus-visible { outline: 3px solid #bf764e; outline-offset: 4px; }
 button { border: 0; }
 button svg { flex-shrink: 0; }
 [hidden] { display: none !important; }
@@ -247,4 +248,67 @@ kbd { font-family: inherit; border: 1px solid #dedfd2; border-radius: 3px; displ
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+
+/* Map controls keep generous hit areas around much smaller visible icons. */
+.map-icon-control { width: 44px; height: 44px; padding: 0; display: grid; place-items: center; background: transparent; color: #52674b; border-radius: 50%; isolation: isolate; }
+.map-icon-control::before { content: ''; position: absolute; width: 32px; height: 32px; border-radius: 50%; background: #fcfaeef0; box-shadow: 0 1px 5px #35462c18; z-index: -1; }
+.map-icon-control:hover::before { background: #fffdf5; }
+.map-fullscreen-toggle { position: absolute; top: 14px; right: 13px; z-index: 10; }
+.time-switch { right: 70px; }
+.map-tools, .map-tools-panel { display: contents; }
+.map-tool-toggle, .map-tools-backdrop, .map-navigation { display: none; }
+.fullscreen-error { position: absolute; top: 75px; left: 16px; right: 16px; margin: 0; padding: 12px; background: var(--paper); border-radius: 8px; font-size: 12px; z-index: 40; }
+
+.map-frame.is-fullscreen { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; height: 100dvh; min-height: 0; max-height: none; border: 0; border-radius: 0; box-shadow: none; background: transparent; z-index: 90; }
+/* Paint on an inner layer as well: iOS fixed-layer backgrounds can leave a gap. */
+.map-frame.is-fullscreen::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100vh; background: #cbd8b7; pointer-events: none; }
+.map-frame.is-fullscreen .world-canvas { height: 100vh; height: 100dvh; }
+.map-frame.is-fullscreen .map-fullscreen-toggle { top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); }
+.map-frame.is-fullscreen .time-switch { top: max(18px, env(safe-area-inset-top)); right: calc(70px + env(safe-area-inset-right)); }
+.map-frame.is-fullscreen .map-address { top: max(19px, env(safe-area-inset-top)); left: max(19px, env(safe-area-inset-left)); }
+.map-frame.is-fullscreen .map-zoom { right: max(19px, env(safe-area-inset-right)); bottom: calc(45px + env(safe-area-inset-bottom)); }
+.map-frame.is-fullscreen .welcome-card { bottom: calc(31px + env(safe-area-inset-bottom)); }
+.map-expanded .site-header, .map-expanded .hero, .map-expanded .route-panel, .map-expanded .map-caption, .map-expanded .map-navigation, .map-expanded .site-footer { visibility: hidden; }
+
+@media (max-width: 600px), (pointer: coarse) and (max-width: 950px) {
+  .map-address, .map-coordinate { display: none; }
+  .map-fullscreen-toggle { top: 7px; right: 7px; }
+  .map-tool-toggle { display: grid; position: absolute; top: 7px; right: 51px; z-index: 31; }
+  .map-tools-panel { display: none; }
+  .is-open .map-tools-backdrop { display: block; position: fixed; inset: 0; z-index: 20; }
+  .is-open .map-tools-panel { display: flex; flex-direction: column; position: absolute; top: 57px; right: 12px; width: 248px; max-width: calc(100% - 24px); max-height: calc(100% - 75px); overflow-y: auto; padding: 12px; border: 1px solid #dedfce; border-radius: 12px; background: #fcfaeffa; box-shadow: 0 8px 24px #35462c20; z-index: 30; }
+  .map-frame .map-tools-panel .time-switch { position: static; padding: 0; background: transparent; box-shadow: none; gap: 3px; }
+  .map-tools-panel .time-switch button { flex: 1; min-width: 0; min-height: 54px; padding: 7px 4px; flex-direction: column; gap: 7px; font-size: 9px; }
+  .map-tools-panel .time-switch span { display: inline; }
+  .map-frame .map-tools-panel .map-zoom { position: static; flex-direction: row; justify-content: center; gap: 7px; padding: 9px 0 0; margin-top: 9px; border-radius: 0; border-top: 1px solid var(--line); background: transparent; box-shadow: none; }
+  .map-tools-panel .map-zoom button { width: 44px; height: 44px; }
+  .map-tools-panel .map-zoom > span { width: 1px; height: 22px; margin: 0 2px; }
+  .direction-pad { position: absolute; display: grid; left: 8px; bottom: 12px; width: 132px; height: 132px; grid-template: repeat(3, 44px) / repeat(3, 44px); gap: 0; filter: none; touch-action: none; }
+  .direction-pad button { position: relative; display: grid; place-items: center; padding: 0; background: transparent; color: #465e3e; border-radius: 50%; isolation: isolate; touch-action: none; user-select: none; -webkit-user-select: none; }
+  .direction-pad button::before { content: ''; position: absolute; width: 30px; height: 30px; border-radius: 50%; background: #fcfaeab8; box-shadow: 0 1px 4px #35462c10; z-index: -1; }
+  .direction-pad button:active { background: transparent; color: #334d2a; }
+  .direction-pad button:active::before { background: #f1f4dcee; }
+  .direction-pad svg { width: 16px; height: 16px; }
+  .direction-up { grid-row: 1; grid-column: 2; }.direction-up > svg { transform: rotate(-90deg); }
+  .direction-left { grid-row: 2; grid-column: 1; }.direction-left > svg { transform: rotate(180deg); }
+  .direction-right { grid-row: 2; grid-column: 3; }
+  .direction-down { grid-row: 3; grid-column: 2; }.direction-down > svg { transform: rotate(90deg); }
+  .pad-center { display: none; }
+  .arrival-button { left: auto; right: 12px; bottom: 27px; transform: none; padding: 10px 12px; gap: 8px; max-width: calc(100% - 156px); white-space: normal; animation: none; }
+  .arrival-icon { display: none; }.arrival-button strong { font-size: 10px; line-height: 1.4; }.arrival-button > svg { width: 16px; margin-left: 0; }
+  .walking-badge { left: auto; right: 12px; bottom: 30px; transform: none; padding: 10px; font-size: 9px; }
+  .map-frame.is-fullscreen .map-tool-toggle { top: max(12px, env(safe-area-inset-top)); right: calc(56px + env(safe-area-inset-right)); }
+  .map-frame.is-fullscreen .map-tools-panel { top: calc(64px + env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); }
+  .map-frame.is-fullscreen .direction-pad { left: max(8px, env(safe-area-inset-left)); bottom: calc(12px + env(safe-area-inset-bottom)); }
+  .map-frame.is-fullscreen .arrival-button, .map-frame.is-fullscreen .walking-badge { right: max(12px, env(safe-area-inset-right)); bottom: calc(27px + env(safe-area-inset-bottom)); }
+}
+
+@media (max-width: 600px) {
+  /* The exploration navigation belongs below the map, where it cannot cover play. */
+  .app[data-current-view="explore"] .main-nav { display: none; }
+  .map-navigation { display: flex; gap: 12px; margin-top: 17px; border-bottom: 1px solid var(--line); }
+  .map-navigation button { flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 46px; padding: 0 2px 7px; background: transparent; font-size: 11px; color: var(--muted); }
+  .map-navigation button[aria-current] { color: var(--green); border-bottom: 2px solid #71835d; }
+  .map-navigation button > span { font-size: 9px; color: #9a9e89; margin-left: 3px; }
 }

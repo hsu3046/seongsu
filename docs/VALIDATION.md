@@ -16,6 +16,7 @@
 | Node unit tests | 6 / 6 PASS |
 | Main browser suite | 14 desktop + 2 mobile checks PASS |
 | Input / lifecycle / responsive suite | 7 / 7 PASS |
+| Fullscreen / mobile controls suite | 8 / 8 PASS |
 | Production preview: load, walk, Enter, first stamp | PASS |
 | Page exceptions | 0 in passing suites |
 
@@ -25,10 +26,14 @@ Additional checks cover all time settings, the placeholder photo tabs, paused po
 
 The input suite verifies actual arrow-key motion, Enter interaction, collision with a building, cleared input after leaving a screen, zoom and recenter, simulated WebGL context loss and retry with exactly one replacement canvas, and responsive Japanese layouts.
 
+The fullscreen suite covers native entry and exit, external fullscreen exit events, 393×852 portrait and 852×393 landscape resizing, one retained canvas, unchanged stamps and position, page-scroll restoration, touch movement/cancellation, folded controls and outside-tap dismissal without map click-through. It also covers fullscreen-to-detail entry and stamp collection, Japanese controls, and simulated unsupported/rejected Fullscreen API requests that use the window-sized fallback. Buttons retain 44×44px hit areas around smaller visible icons. These checks use Chrome emulation, not physical Safari/Android devices.
+
 Raw results:
 
 - artifacts/browser-report.json
 - artifacts/interaction-report.json
+- artifacts/fullscreen-report.json
+- artifacts/mobile-controls.png, mobile-fullscreen.png, mobile-map-tools.png, mobile-fullscreen-landscape.png
 - artifacts/production-smoke.json
 - artifacts/desktop-final.png
 - artifacts/desktop.png, night.png, place.png, passport.png, complete.png
@@ -36,7 +41,7 @@ Raw results:
 
 ## Frame timing
 
-While the game was visible in desktop headless Chrome, 120 browser requestAnimationFrame intervals were recorded: median **8.3ms**, p95 **9.2ms**.
+During initial demo validation, while the game was visible in desktop headless Chrome, 120 browser requestAnimationFrame intervals were recorded: median **8.3ms**, p95 **9.2ms**.
 
 These are browser scheduling intervals, not an independent measurement of Phaser draw completion, GPU time, native iOS/Android frame rate, thermals, or battery use. The engine is configured with a 60fps target; sustained 60fps on a mid-range physical device remains unverified.
 
@@ -44,9 +49,9 @@ These are browser scheduling intervals, not an independent measurement of Phaser
 
 Latest build:
 
-- Main JavaScript: approximately 243 kB, 80 kB gzip.
+- Main JavaScript: approximately 248 kB, 81 kB gzip.
 - Dynamically loaded world/Phaser chunk: approximately 1.21 MB, 322 kB gzip.
-- CSS: approximately 43 kB, 10 kB gzip.
+- CSS: approximately 49 kB, 11 kB gzip.
 - Fonts are self-hosted local build assets.
 
 Vite emits a large-chunk warning for the game-engine chunk. The UI and engine are already split through dynamic import. This warning is documented rather than hidden by increasing the warning threshold.
@@ -56,6 +61,8 @@ Vite emits a large-chunk warning for the game-engine chunk. The UI and engine ar
 - Phaser ignores a native keyboard event already marked defaultPrevented. Browser scrolling is now suppressed by Phaser's own capture list, and the redundant earlier DOM keyboard handler was removed.
 - Phaser defers destruction to a game step. Cleanup wakes an already sleeping engine once so its pending destruction removes the canvas and releases the renderer.
 - Location detail entry stops automatic movement before pausing, preserving the exact position on return.
+- Resize now immediately recenters the camera on the player, avoiding a temporarily offscreen avatar after orientation/fullscreen changes.
+- Focus outlines now require explicit Tab navigation. Verified in the in-app browser: fullscreen exit and tool-button clicks leave no outline; Tab shows the keyboard focus ring, and a subsequent pointer click clears it. Production build passed.
 
 ## Limits
 

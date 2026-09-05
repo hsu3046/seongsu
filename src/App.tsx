@@ -1,19 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { places, findPlace } from './data/places';
-import type { Locale, Place, PlaceId, TimeOfDay } from './data/places';
+import type { Locale, Place, PlaceId } from './data/places';
 import { getCopy } from './data/copy';
 import { collectStamp, decodeProgress, freshProgress, STORAGE_KEY, toggleSaved } from './state/progress';
 import type { WorldController, Direction } from './game/world';
 import { placePreview } from './game/art';
 import { Icon } from './components/Icon';
-import type { IconName } from './components/Icon';
 import { WorldCanvas } from './components/WorldCanvas';
+import { MapTools } from './components/MapTools';
+import { useMapFullscreen } from './hooks/useMapFullscreen';
 import './styles.css';
 
 type View = 'explore' | 'detail' | 'passport' | 'complete' | 'about';
-const periods: { value: TimeOfDay; icon: IconName }[] = [
-  { value: 'morning', icon: 'sunrise' }, { value: 'afternoon', icon: 'sun' }, { value: 'night', icon: 'moon' },
-];
 
 function Stamp({ place, collected, large = false }: { place: Place; collected: boolean; large?: boolean }) {
   return <div className={'stamp ' + (collected ? 'is-collected ' : '') + (large ? 'stamp-large' : '')} style={{ '--stamp-color': place.color } as React.CSSProperties}>
@@ -73,6 +71,7 @@ export default function App() {
   const [saveError, setSaveError] = useState(false);
   const [toast, setToast] = useState('');
   const [confirmReset, setConfirmReset] = useState(false);
+  const [keyboardNavigation, setKeyboardNavigation] = useState(false);
   const controller = useRef<WorldController | null>(null);
   const resetDialog = useRef<HTMLDialogElement>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
@@ -82,6 +81,16 @@ export default function App() {
   const currentPlace = findPlace(selected);
   const detailPlace = findPlace(detailId);
   const paused = view !== 'explore' || confirmReset;
+  const fullscreen = useMapFullscreen(view === 'explore');
+
+  useEffect(() => {
+    // Only Tab navigation needs a focus ring; movement keys and restored focus do not.
+    const keyboardFocus = (event: KeyboardEvent) => {
+      if (event.key === 'Tab') setKeyboardNavigation(true);
+    };
+    document.addEventListener('keydown', keyboardFocus);
+    return () => document.removeEventListener('keydown', keyboardFocus);
+  }, []);
 
   useEffect(() => {
     document.documentElement.lang = progress.locale;
@@ -150,8 +159,9 @@ export default function App() {
   };
   const goPassport = () => show('passport');
 
-  return <div className={'app locale-' + progress.locale}>
-    <header className="site-header">
+  return <div className={'app locale-' + progress.locale + (fullscreen.active ? ' map-expanded' : '')} data-current-view={view}
+    data-keyboard-navigation={keyboardNavigation} onPointerDownCapture={() => setKeyboardNavigation(false)}>
+    <header className="site-header" inert={fullscreen.active}>
       <button className="brand-button" onClick={() => show('explore')} aria-label="Seongsu Passport"><Wordmark /></button>
       <nav className="main-nav" aria-label={progress.locale === 'en' ? 'Main navigation' : 'メインナビゲーション'}>
         <button className={view === 'explore' ? 'active' : ''} aria-current={view === 'explore' ? 'page' : undefined} onClick={() => show('explore')}><Icon name="compass" size={17} />{t.explore}</button>
@@ -169,7 +179,7 @@ export default function App() {
 
     <main>
       <section className="explore-page page" data-view="explore" hidden={view !== 'explore'}>
-        <div className="hero">
+        <div className="hero" inert={fullscreen.active}>
           <div><p className="eyebrow"><span className="small-star">✳</span>{t.eyebrow}</p>
             <h1>{t.heroFirst} <em>{t.heroSecond}</em></h1>
             <p className="hero-description">{t.heroNote}</p>
@@ -178,22 +188,22 @@ export default function App() {
         </div>
         <div className="experience">
           <div className="map-column">
-            <div className={'map-frame time-' + progress.time} data-testid="map-frame">
+            <div ref={fullscreen.frame} className={'map-frame time-' + progress.time + (fullscreen.active ? ' is-fullscreen' : '')} data-testid="map-frame">
               <WorldCanvas controller={controller} position={progress.position} time={progress.time} visited={progress.visited}
                 enabled={progress.started} paused={paused} locale={progress.locale}
                 onReady={() => setReady(true)} onNear={setNearby}
                 onPosition={(position) => setProgress((p) => Math.abs(p.position.x - position.x) + Math.abs(p.position.y - position.y) < 1 ? p : { ...p, position })}
                 onVisit={openPlace} onNavigating={setNavigating} onBlocked={() => notify(t.offPath)} />
               <div className="map-address"><span className="map-live-dot" /><div><b>{t.mapTop}</b><span>{t.mapSub}</span></div></div>
-              <div className="time-switch" role="group" aria-label={t.timeLabel}>
-                {periods.map((period) => <button key={period.value} aria-pressed={progress.time === period.value}
-                  onClick={() => setProgress((p) => ({ ...p, time: period.value }))}><Icon name={period.icon} size={15} /><span>{t[period.value]}</span></button>)}
-              </div>
-              <div className="map-zoom">
-                <button aria-label={t.zoomIn} onClick={() => controller.current?.zoom(.15)}><Icon name="plus" size={18} /></button>
-                <button aria-label={t.zoomOut} onClick={() => controller.current?.zoom(-.15)}><Icon name="minus" size={18} /></button>
-                <span /><button aria-label={t.recenter} onClick={() => controller.current?.recenter()}><Icon name="target" size={18} /></button>
-              </div>
+              <button ref={fullscreen.button} className="map-fullscreen-toggle map-icon-control"
+                aria-label={fullscreen.active ? t.exitFullscreen : t.fullscreen} title={fullscreen.active ? t.exitFullscreen : t.fullscreen}
+                aria-pressed={fullscreen.active} onClick={() => { controller.current?.stop(); void fullscreen.toggle(); }}>
+                <Icon name={fullscreen.active ? 'contract' : 'expand'} size={18} />
+              </button>
+              <MapTools controller={controller} locale={progress.locale} time={progress.time} active={view === 'explore'} expanded={fullscreen.active}
+                onTime={(time) => setProgress((p) => ({ ...p, time }))} />
+              {fullscreen.active && fullscreen.fallback && <span className="sr-only" role="status">{t.fullscreenFallback}</span>}
+              {fullscreen.active && fullscreen.exitError && <p className="fullscreen-error" role="alert">{t.fullscreenError}</p>}
               {!progress.started && ready && <div className="welcome-card">
                 <span className="eyebrow"><Icon name="spark" size={13} />SEONGSU, AT YOUR OWN PACE</span>
                 <h2>{t.welcome}</h2><p>{t.startNote}</p>
@@ -218,14 +228,18 @@ export default function App() {
               </div>}
               <div className="map-coordinate" aria-hidden="true">37°32′ N &nbsp; 127°03′ E</div>
             </div>
-            <div className="map-caption">
+            <div className="map-caption" inert={fullscreen.active}>
               <div className="map-legend"><span><i className="you-dot" />{t.you}</span><span><i className="coffee-dot" />{t.coffee}</span><span><i className="shop-dot" />{t.objects}</span><span><i className="green-dot" />{t.green}</span></div>
               <span className="desktop-hint"><kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd><span>{t.clickHint}</span></span>
               <span className="mobile-hint">{t.touchHint}</span>
             </div>
+            <nav className="map-navigation" aria-label={t.explore} inert={fullscreen.active}>
+              <button aria-current="page" onClick={() => show('explore')}><Icon name="compass" size={16} />{t.explore}</button>
+              <button onClick={goPassport}><Icon name="passport" size={16} />{t.passport}<span>{progress.visited.length} / 5</span></button>
+            </nav>
           </div>
 
-          <aside className="route-panel" aria-label={t.yourRoute}>
+          <aside className="route-panel" aria-label={t.yourRoute} inert={fullscreen.active}>
             <div className="route-cover">
               <div className="eyebrow"><span className="route-dot" />{t.routeTag}<span className="route-number">NO. 01</span></div>
               <h2>{t.routeName}<span className="hand-spark" aria-hidden="true">✳</span></h2>
@@ -312,7 +326,7 @@ export default function App() {
           <article><span className="eyebrow">{t.about}</span><h1 className="view-heading" tabIndex={-1}>{t.aboutTitle}</h1><p>{t.aboutText}</p><h2 className="eyebrow">{t.controlsTitle}</h2><p>{t.controlsText}</p><div className="about-note"><Icon name="compass" size={25} /><p>{t.demoText}</p></div><p className="about-privacy">{t.privacy}</p><button className="button primary" onClick={() => { startWalk(); show('explore'); }}>{progress.started ? t.continue : t.start}<Icon name="arrow" size={18} /></button></article></div>
       </section>}
     </main>
-    <footer className="site-footer"><span><Icon name="spark" size={13} />{t.footer}</span><span>{t.footerRight}</span></footer>
+    <footer className="site-footer" inert={fullscreen.active}><span><Icon name="spark" size={13} />{t.footer}</span><span>{t.footerRight}</span></footer>
     {saveError && <div className="storage-notice" role="status">{t.saveError}</div>}
     <div className={'toast ' + (toast ? 'visible' : '')} role="status" aria-live="polite">{toast && <><Icon name="spark" size={16} />{toast}</>}</div>
     <dialog ref={resetDialog} className="reset-dialog" aria-labelledby="reset-heading" onCancel={() => setConfirmReset(false)}>
