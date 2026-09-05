@@ -362,7 +362,13 @@ export function createWorld(parent: HTMLElement, options: WorldOptions): WorldCo
       game.destroy(true);
       if (game.loop.started && !game.loop.running) game.loop.wake();
     },
-    resize: (w, h) => { if (w > 0 && h > 0 && (game.scale.width !== w || game.scale.height !== h)) game.scale.resize(w, h); },
+    resize: (w, h) => {
+      if (w > 0 && h > 0 && (game.scale.width !== w || game.scale.height !== h)) {
+        game.scale.resize(w, h);
+        // Fullscreen and rotation should not wait for the follow camera to catch up.
+        scene.recenter();
+      }
+    },
     pause: (paused) => scene.pause(paused),
     enable: (enabled) => scene.enable(enabled),
     setTime: (period) => scene.setTime(period),
