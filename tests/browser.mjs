@@ -10,7 +10,7 @@ const browser = await chromium.launch({ channel: 'chrome', headless: true });
 const artifactDir = new URL('../artifacts/', import.meta.url);
 await mkdir(artifactDir, { recursive: true });
 const report = { browser: browser.version(), desktop: [], mobile: [], failures: [], consoleErrors: [] };
-const storageKey = 'seongsu-passport:v1';
+const storageKey = 'seongsu-passport:yeonmujang:v1';
 const progress = (page) => page.evaluate((key) => JSON.parse(localStorage.getItem(key)), storageKey);
 const ready = async (page) => {
   await page.locator('[data-ready="true"]').waitFor({ timeout: 20000 });
@@ -28,6 +28,8 @@ try {
   const context = await browser.newContext({ viewport: { width: 1440, height: 1040 }, deviceScaleFactor: 1 });
   const page = await context.newPage();
   observeErrors(page);
+  const legacy = JSON.stringify({ version: 1, started: true, visited: ['brick'], saved: ['grove'], locale: 'ja', time: 'night', position: { x: 640, y: 592 } });
+  await context.addInitScript((legacy) => { if (!localStorage.getItem('seongsu-passport:v1')) localStorage.setItem('seongsu-passport:v1', legacy); }, legacy);
   await page.goto(url);
   await ready(page);
   assert.equal(await page.locator('canvas').count(), 1);
@@ -51,21 +53,21 @@ try {
   await page.getByRole('button', { name: 'Afternoon', exact: true }).click();
   check('desktop', 'All three time settings update and persist');
 
-  const stops = ['Brick & Bean', 'Butter Notes', 'Objects & Days', 'Courtyard 05', 'Little Grove'];
+  const stops = ['Scène', 'Dior Seongsu', 'Tamburins', 'Daelim Changgo', 'MUSINSA Seongsu'];
   for (const [index, name] of stops.entries()) {
     await page.getByRole('button', { name: 'Walk here · ' + name, exact: true }).click();
     const arrival = page.locator('.arrival-button').filter({ hasText: name });
-    await arrival.waitFor({ state: 'visible', timeout: 15000 });
+    await arrival.waitFor({ state: 'visible', timeout: 30000 });
     await arrival.click();
     await page.locator('[data-view="detail"]').waitFor();
     await page.getByRole('button', { name: 'Stamp my passport', exact: true }).click();
     assert.equal((await progress(page)).visited.length, index + 1);
     if (index === 0) {
       await page.getByRole('button', { name: 'Save this place', exact: true }).click();
-      assert.deepEqual((await progress(page)).saved, ['brick']);
+      assert.deepEqual((await progress(page)).saved, ['scene']);
       assert.equal(await page.getByRole('button', { name: 'Stamp my passport', exact: true }).count(), 0);
-      await page.getByRole('button', { name: '02 The interior', exact: true }).click();
-      assert.equal(await page.getByRole('button', { name: '02 The interior', exact: true }).getAttribute('aria-pressed'), 'true');
+      assert.equal(await page.getByRole('link', { name: 'Open in Naver Maps' }).getAttribute('href'), 'https://map.naver.com/p/entry/place/1030871168');
+      assert.ok(await page.getByText('서울 성동구 연무장5길 20', { exact: true }).isVisible());
       await screenshot(page, 'place');
       const position = (await progress(page)).position;
       // Elapsed time is intentional here: verify the paused simulation does not drift.
@@ -74,7 +76,7 @@ try {
       await page.getByRole('button', { name: 'Back to the neighborhood', exact: true }).click();
       await page.waitForTimeout(350);
       assert.deepEqual((await progress(page)).position, position);
-      check('desktop', 'Pause/return preserves position; stamp is unique; bookmark and media tabs work');
+      check('desktop', 'Pause/return preserves position; stamp is unique; bookmark and real address links work');
     } else if (index < 4) {
       await page.getByRole('button', { name: 'Back to the neighborhood', exact: true }).click();
     }
@@ -94,7 +96,7 @@ try {
   await ready(page);
   const restored = await progress(page);
   assert.equal(restored.visited.length, 5);
-  assert.deepEqual(restored.saved, ['brick']);
+  assert.deepEqual(restored.saved, ['scene']);
   assert.equal(restored.locale, 'ja');
   await page.locator('.main-nav').getByRole('button', { name: /パスポート/ }).click();
   await screenshot(page, 'passport-ja');
@@ -109,6 +111,8 @@ try {
   assert.equal((await progress(page)).visited.length, 0);
   assert.equal((await progress(page)).started, false);
   assert.deepEqual((await progress(page)).saved, []);
+  assert.equal(await page.evaluate(() => localStorage.getItem('seongsu-passport:v1')), legacy);
+  check('desktop', 'Legacy fictional passport survives the new route and its reset');
   check('desktop', 'Reset cancellation preserves data; confirmed reset clears only this passport');
   await context.close();
 
@@ -120,7 +124,7 @@ try {
   await screenshot(phone, 'mobile');
   assert.equal(await phone.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
   await phone.getByRole('button', { name: 'Let’s take a walk', exact: true }).click();
-  const pad = phone.getByRole('button', { name: 'Walk up', exact: true });
+  const pad = phone.getByRole('button', { name: 'Walk left', exact: true });
   await pad.scrollIntoViewIfNeeded();
   const box = await pad.boundingBox();
   assert.ok(box);
@@ -128,14 +132,14 @@ try {
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: box.x + box.width / 2, y: box.y + box.height / 2 }] });
   await phone.waitForTimeout(420);
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
-  await phone.waitForFunction((key) => JSON.parse(localStorage.getItem(key)).position.y < 575, storageKey);
+  await phone.waitForFunction((key) => JSON.parse(localStorage.getItem(key)).position.x < 780, storageKey);
   const afterTouch = (await progress(phone)).position;
   await phone.waitForTimeout(1100);
   assert.deepEqual((await progress(phone)).position, afterTouch);
   check('mobile', '390px layout fits; real browser touch contact moves avatar and touchcancel stops it');
 
-  await phone.getByRole('button', { name: 'Walk here · Brick & Bean', exact: true }).click();
-  await phone.locator('.arrival-button').filter({ hasText: 'Brick & Bean' }).waitFor({ timeout: 15000 });
+  await phone.getByRole('button', { name: 'Walk here · Scène', exact: true }).click();
+  await phone.locator('.arrival-button').filter({ hasText: 'Scène' }).waitFor({ timeout: 30000 });
   await screenshot(phone, 'mobile-playing');
   await phone.locator('.arrival-button').click();
   await phone.getByRole('button', { name: 'Stamp my passport', exact: true }).click();

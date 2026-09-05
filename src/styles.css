@@ -312,3 +312,35 @@ kbd { font-family: inherit; border: 1px solid #dedfd2; border-radius: 3px; displ
   .map-navigation button[aria-current] { color: var(--green); border-bottom: 2px solid #71835d; }
   .map-navigation button > span { font-size: 9px; color: #9a9e89; margin-left: 3px; }
 }
+
+/* The real route's overview and source details live outside the playable viewport. */
+.neighborhood-overview { display: block; width: 100%; height: auto; overflow: hidden; border-radius: 8px; }
+.route-cover .neighborhood-overview { margin: 16px 0 18px; max-height: 160px; }
+.route-cover h2 { font-size: 27px; line-height: 1.15; }
+.map-attribution { display: flex; flex-wrap: wrap; gap: 4px 9px; margin: 10px 0 0; color: #7b816f; font-size: 9px; line-height: 1.6; }
+.map-attribution a { color: inherit; text-underline-offset: 3px; }
+.map-expanded .map-attribution { visibility: hidden; }
+.north-arrow { display: inline-block; font-size: 16px; vertical-align: middle; margin-right: 5px; }
+.map-coordinate { bottom: 30px; }
+.map-credit { position: absolute; right: 10px; bottom: 5px; padding: 3px 5px; border-radius: 3px; background: #f8f6e9d9; color: #5f6a58; font-size: 9px; line-height: 1.4; text-decoration: none; }
+.real-place-journal { min-height: 0; background: var(--place-tint); }
+.landmark-illustration { display: grid; place-items: center; padding: 12px 0; }
+.landmark-illustration img { width: min(100%, 460px); image-rendering: pixelated; height: auto; }
+.illustration-caption { text-align: center; color: #777b67; font-size: 10px; margin: 2px 0 24px; }
+.real-place-journal .neighborhood-overview { max-height: 220px; margin-bottom: 21px; }
+.real-place-journal .photo-location { text-align: center; color: #72765f; padding: 0 0 7px; }
+.place-address { display: flex; align-items: flex-start; gap: 11px; padding: 20px 0 14px; border-top: 1px solid #dedfd2; }
+.place-address svg { flex-shrink: 0; margin-top: 2px; }
+.place-address strong, .place-address span { display: block; font-size: 12px; line-height: 1.8; }
+.place-address span { font-size: 11px; color: #858a79; }
+.place-source-links { display: flex; flex-wrap: wrap; gap: 10px; }
+.place-source-links a { display: inline-flex; gap: 8px; align-items: center; min-height: 40px; padding: 8px 13px; border: 1px solid #d5d9c7; border-radius: 6px; color: #53694f; text-decoration: none; font-size: 11px; }
+.place-source-links a:hover { background: #e9edde; }
+.verified-note { font-size: 9px; line-height: 1.8; color: #818673; margin: 11px 0 23px; }
+@media (max-width: 600px) {
+  .map-attribution { font-size: 8px; gap: 3px 8px; }
+  .route-cover .neighborhood-overview { max-height: 200px; }
+  .place-source-links a { min-height: 44px; font-size: 12px; }
+  .place-address strong { font-size: 13px; }
+  .verified-note { font-size: 10px; }
+}

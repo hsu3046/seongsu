@@ -43,3 +43,9 @@ DEMO_URL로 테스트할 로컬 주소를 바꿀 수 있다. 결과와 스크린
 지원되는 브라우저에서는 Fullscreen API로 맵을 표시한다. API가 없거나 요청이 거절되면 브라우저 창을 채우는 보기로 전환하며 브라우저 주소창은 남을 수 있다. 같은 닫기 버튼으로 복귀한다. 실제 iOS Safari의 전체 화면·주소창·안전 영역 동작은 기기에서 별도로 확인해야 한다.
 
 구현은 [MDN requestFullscreen](https://developer.mozilla.org/en-US/docs/Web/API/Element/requestFullscreen)과 [fullscreenchange](https://developer.mozilla.org/en-US/docs/Web/API/Document/fullscreenchange_event)를 참고했다.
+
+## Real neighborhood data
+
+현재 코스는 쎈느·디올·탬버린즈·대림창고·무신사다. 지도 API 키나 새 의존성 설치가 필요하지 않다. `src/data/map-source.json`의 데이터와 ODbL 출처 표시는 함께 유지한다. 매장을 바꿀 때 주소·출처·앵커·게임용 도착점을 함께 확인한다.
+
+배포용 빌드 검증은 `npm run build` 후 실행한 로컬 preview 주소를 DEMO_URL로 지정한다. 테스트 도중 HMR의 영향을 받지 않도록 검증 중인 빌드를 다시 생성하지 않는다.

@@ -10,6 +10,8 @@ import { WorldCanvas } from './components/WorldCanvas';
 import { MapTools } from './components/MapTools';
 import { useMapFullscreen } from './hooks/useMapFullscreen';
 import './styles.css';
+import { MAP_REVIEWED, MAP_ROTATION, streets, WORLD, station, project } from './data/geography';
+import mapDataUrl from './data/map-source.json?url';
 
 type View = 'explore' | 'detail' | 'passport' | 'complete' | 'about';
 
@@ -29,31 +31,26 @@ function Wordmark() {
   </span>;
 }
 
+function NeighborhoodOverview({ selected }: { selected?: PlaceId }) {
+  return <svg className="neighborhood-overview" viewBox={`0 0 ${WORLD.width} ${WORLD.height}`} role="img" aria-label="Seongsu Station, Yeonmujang-gil and five stops">
+    <rect width={WORLD.width} height={WORLD.height} rx="50" fill="#e9e7d9" />
+    {streets.map((street) => <polyline key={street.id} points={street.points.map((p) => `${p.x},${p.y}`).join(' ')} fill="none" stroke={street.kind === 'secondary' ? '#a8b59f' : '#c7cdbb'} strokeWidth={street.width + 10} />)}
+    <text x={station.x} y={station.y - 60} textAnchor="middle" fontSize="72" fill="#567054">② SEONGSU</text>
+    {places.map((place) => { const p = project(place.location); return <g key={place.id}>
+      <circle cx={p.x} cy={p.y} r={selected === place.id ? 67 : 48} fill={selected === place.id ? place.color : '#f9f5e7'} stroke={place.color} strokeWidth="8" />
+      <text x={p.x} y={p.y + 19} textAnchor="middle" fontFamily="monospace" fontSize="57" fontWeight="bold" fill={selected === place.id ? '#fff8e9' : place.color}>{Number(place.number)}</text>
+    </g>; })}
+    <g transform={`translate(1650 180) rotate(${-MAP_ROTATION})`} fill="#69795e"><path d="M0 -65 -24 5 0 -10 24 5Z"/><text x="0" y="-85" textAnchor="middle" fontSize="60">N</text></g>
+  </svg>;
+}
 function PhotoJournal({ place, locale }: { place: Place; locale: Locale }) {
-  const [photo, setPhoto] = useState(0);
   const t = getCopy(locale);
-  return <div className="photo-journal" style={{ '--place-tint': place.tint, '--place-color': place.color } as React.CSSProperties}>
-    <div className="photo-heading"><span className="eyebrow">{t.photos}</span><span>0{photo + 1} / 02</span></div>
-    <div className="photo-placeholder" aria-label={t.photoNote}>
-      <span className="crop corner-tl" /><span className="crop corner-tr" /><span className="crop corner-bl" /><span className="crop corner-br" />
-      <svg className="architecture-sketch" viewBox="0 0 400 280" fill="none" stroke="currentColor" strokeWidth="1.3" aria-hidden="true">
-        {photo === 0 ? <>
-          <path d="M38 238h326M79 238V89l23-22h197l24 22v149M74 91h256M80 151h245M100 67V50h196v17M102 238v-63h48v63m99 0v-63h49v63M176 238v-67a24 24 0 0 1 48 0v67m-24-90v90M92 116h219" />
-          <path d="M109 105h17m14 0h17m14 0h17m14 0h17m14 0h17m14 0h17M111 196h30m-15-20v57m132-37h30m-15-20v57M200 181v-14M166 143h68" />
-          <path d="M48 238v-36m0 7c-25-4-15-32 0-17 15-20 30 6 0 17M347 238v-51m0 18c-32-7-19-45 0-24 20-26 38 10 0 24M320 231h17v-27h-17v27" />
-        </> : <>
-          <path d="M42 238h318M75 238V63h247v175M88 75h221v142H88V75M153 217v-94a47 47 0 0 1 94 0v94M197 79v137M155 128h92M79 231h242M116 217v-37m0 13c-33-10-26-49 0-23 27-29 31 15 0 23M283 217v-42m0 20c-36-9-27-50 0-27 24-32 40 16 0 27" />
-          <path d="M160 194h76m-61 0v43m47-43v43M132 207v28m-7-28h17m99 0h22m-10 0v28M179 185h12v9h-12v-9m32 0h12v9h-12v-9M88 85h46v52H88m14-52v52" />
-        </>}
-      </svg>
-      <h3>{t.photoSoon}</h3>
-      <p>{t.photoNote}</p>
-      <span className="photo-location">{place.localName} <span>·</span> SEONGSU</span>
-    </div>
-    <div className="photo-tabs" aria-label={t.photos}>
-      <button aria-pressed={photo === 0} onClick={() => setPhoto(0)}><span>01</span>{t.exterior}</button>
-      <button aria-pressed={photo === 1} onClick={() => setPhoto(1)}><span>02</span>{t.inside}</button>
-    </div>
+  return <div className="photo-journal real-place-journal" style={{ '--place-tint': place.tint, '--place-color': place.color } as React.CSSProperties}>
+    <div className="photo-heading"><span className="eyebrow">{t.photos}</span><span>{place.number} / 05</span></div>
+    <div className="landmark-illustration"><img src={placePreview(place)} alt={place.name + ' · ' + t.photoNote} /></div>
+    <p className="illustration-caption">{t.photoNote}</p>
+    <NeighborhoodOverview selected={place.id} />
+    <span className="photo-location">{place.localName} <span>·</span> SEONGSU</span>
   </div>;
 }
 
@@ -63,8 +60,8 @@ export default function App() {
     catch { return freshProgress(); }
   });
   const [view, setView] = useState<View>('explore');
-  const [selected, setSelected] = useState<PlaceId>('brick');
-  const [detailId, setDetailId] = useState<PlaceId>('brick');
+  const [selected, setSelected] = useState<PlaceId>('scene');
+  const [detailId, setDetailId] = useState<PlaceId>('scene');
   const [nearby, setNearby] = useState<PlaceId | null>(null);
   const [navigating, setNavigating] = useState(false);
   const [ready, setReady] = useState(false);
@@ -154,7 +151,7 @@ export default function App() {
   const reset = () => {
     controller.current?.reset();
     setProgress({ ...freshProgress(), locale: progress.locale });
-    setSelected('brick'); setNearby(null); setNavigating(false);
+    setSelected('scene'); setNearby(null); setNavigating(false);
     setConfirmReset(false); setView('explore');
   };
   const goPassport = () => show('passport');
@@ -226,13 +223,15 @@ export default function App() {
                 ><Icon name="arrow" size={20} /></button>)}
                 <span className="pad-center" />
               </div>}
-              <div className="map-coordinate" aria-hidden="true">37°32′ N &nbsp; 127°03′ E</div>
+              <div className="map-coordinate" aria-hidden="true"><span className="north-arrow" style={{ transform: `rotate(${-MAP_ROTATION}deg)` }}>↑</span> N · YEONMUJANG</div>
+              <a className="map-credit" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap</a>
             </div>
             <div className="map-caption" inert={fullscreen.active}>
-              <div className="map-legend"><span><i className="you-dot" />{t.you}</span><span><i className="coffee-dot" />{t.coffee}</span><span><i className="shop-dot" />{t.objects}</span><span><i className="green-dot" />{t.green}</span></div>
+              <div className="map-legend"><span><i className="you-dot" />{t.you}</span><span><i className="coffee-dot" />{t.coffee}</span><span><i className="shop-dot" />{t.objects}</span></div>
               <span className="desktop-hint"><kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd><span>{t.clickHint}</span></span>
               <span className="mobile-hint">{t.touchHint}</span>
             </div>
+            <p className="map-attribution" inert={fullscreen.active}>{t.mapNote} <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap contributors</a><a href={mapDataUrl} download="seongsu-map.json">ODbL · {t.mapData}</a></p>
             <nav className="map-navigation" aria-label={t.explore} inert={fullscreen.active}>
               <button aria-current="page" onClick={() => show('explore')}><Icon name="compass" size={16} />{t.explore}</button>
               <button onClick={goPassport}><Icon name="passport" size={16} />{t.passport}<span>{progress.visited.length} / 5</span></button>
@@ -244,7 +243,7 @@ export default function App() {
               <div className="eyebrow"><span className="route-dot" />{t.routeTag}<span className="route-number">NO. 01</span></div>
               <h2>{t.routeName}<span className="hand-spark" aria-hidden="true">✳</span></h2>
               <p>{t.routeSubtitle}</p>
-              <div className="route-meta"><span><Icon name="pin" size={13} />{t.stopCount}</span><span><Icon name="clock" size={13} />{t.duration}</span></div>
+              <NeighborhoodOverview /><div className="route-meta"><span><Icon name="pin" size={13} />{t.stopCount}</span><span><Icon name="clock" size={13} />{t.duration}</span></div>
             </div>
             <div className="route-list-heading"><span>{t.yourRoute}</span><span>01—05</span></div>
             <ol className="route-list">
@@ -280,6 +279,9 @@ export default function App() {
             <div className="local-name">{detailPlace.localName}<span>SEONGSU-DONG</span></div>
             <p className="place-intro">{detailPlace.note[progress.locale]}</p>
             <div className="story"><h2 className="eyebrow">{t.placeStory}</h2><p>{detailPlace.description[progress.locale]}</p><p>{detailPlace.detail[progress.locale]}</p></div>
+            <div className="place-address"><Icon name="pin" size={18} /><div><strong>{detailPlace.address}</strong><span>{detailPlace.addressEn}</span></div></div>
+            <div className="place-source-links"><a href={detailPlace.naverUrl} target="_blank" rel="noreferrer">{t.naverMap}<Icon name="arrow" size={15} /></a><a href={detailPlace.source} target="_blank" rel="noreferrer">{detailPlace.sourceName}<Icon name="arrow" size={15} /></a></div>
+            <p className="verified-note">{t.verified} {MAP_REVIEWED} · {t.checkHours}</p>
             <div className="moment"><Icon name="sun" size={22} /><div><span className="eyebrow">{t.favoriteMoment}</span><p>{detailPlace.moment[progress.locale]}</p></div></div>
             <div className="detail-actions">
               {progress.visited.includes(detailId)
@@ -314,7 +316,7 @@ export default function App() {
       {view === 'complete' && <section className="complete-page page secondary-page" data-view="complete">
         <div className="complete-stars" aria-hidden="true">✳ <span>✦</span> ✳</div>
         <div className="eyebrow">{t.completed}</div><h1 className="view-heading" tabIndex={-1}>{t.completeTitle}</h1><p>{t.completeNote}</p>
-        <div className="explorer-badge"><span>SEONGSU PASSPORT</span><Icon name="footsteps" size={56} /><strong>SLOW<br />EXPLORER</strong><span>COFFEE & BRICK · NO. 01</span></div>
+        <div className="explorer-badge"><span>SEONGSU PASSPORT</span><Icon name="footsteps" size={56} /><strong>SLOW<br />EXPLORER</strong><span>YEONMUJANG · NO. 01</span></div>
         <div className="complete-stamps">{places.map((place) => <Stamp key={place.id} place={place} collected />)}</div>
         <button className="button primary" onClick={goPassport}>{t.seePassport}<Icon name="arrow" size={18} /></button>
         <button className="text-button" onClick={() => show('explore')}>{t.continueExploring}</button>

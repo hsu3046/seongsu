@@ -1,5 +1,7 @@
 # Seongsu Passport — UI 데모 조사 및 구현 제안
 
+> 최초 가상 마을 제안의 기록입니다. 2026-09-06 실제 성수역 남쪽 코스로 전환한 범위는 [REAL_NEIGHBORHOOD.md](REAL_NEIGHBORHOOD.md)를 참고하세요.
+
 작성일: 2026-09-05  
 상태: 2안 승인 / 첫 데모 구현·로컬 검증 완료  
 입력 문서: [PRD v0.1](../doc/seongsu-app-prd.md)

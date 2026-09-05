@@ -1,6 +1,6 @@
 import { places, WORLD } from '../data/places.ts';
-import type { Place, PlaceKind } from '../data/places.ts';
-import { buildings } from './navigation.ts';
+import type { Place, Point } from '../data/places.ts';
+import { footprints, streets, station, exits } from '../data/geography.ts';
 
 type Context = CanvasRenderingContext2D;
 const ink = '#3e4e43';
@@ -107,189 +107,143 @@ function lamp(c: Context, x: number, y: number) {
   rect(c, x - 3, y - 61, 4, 7, '#fcf1c3');
 }
 
-function drawBuilding(c: Context, x: number, y: number, w: number, h: number, kind: PlaceKind | 'plain', name: string) {
-  const bakery = kind === 'bakery';
-  const objects = kind === 'objects';
-  const color = bakery ? '#d0b283' : objects ? '#b4b09a' : '#ba7a5c';
-  const light = bakery ? '#dbc197' : objects ? '#c7c2a9' : '#cf9270';
-  const mortar = bakery ? '#bea477' : objects ? '#a5a590' : '#a86953';
-  const roofY = y + 8;
-  const roofH = Math.round(h * .47);
-  rect(c, x + 12, y + 15, w, h + 2, '#b5b99e');
-  rect(c, x, y + 14, w, h - 14, color);
-  for (let by = y + 20, row = 0; by < y + h; by += 9, row++) {
-    rect(c, x, by, w, 1, mortar);
-    for (let bx = x + (row % 2 ? 0 : 12); bx < x + w; bx += 24) {
-      rect(c, bx, by - 8, 1, 8, mortar);
-      if (noise(bx, by) > .65) rect(c, bx + 3, by - 6, 17, 4, light);
+// All façades below are original pixel interpretations, not copied brand photography.
+function drawLandmark(c: Context, place: Place) {
+  const x = 32, y = 36, w = 192, h = 128;
+  const warehouse = place.id === 'daelim' || place.id === 'musinsa';
+  rect(c, 42, 63, w, h - 13, '#bdc0ad');
+  rect(c, x, y + 28, w, h - 20, warehouse ? '#b17357' : '#dcd9c9');
+  if (warehouse) {
+    for (let row = 0; row < 12; row++) {
+      rect(c, x, y + 30 + row * 8, w, 1, '#8f5c4a');
+      for (let col = 0; col < 9; col++) rect(c, x + col * 24 + row % 2 * 12, y + 31 + row * 8, 1, 7, '#8f5c4a');
     }
-  }
-  rect(c, x, y + h - 6, w, 6, '#827c65');
-  // Parapets, individual roof seams, and equipment give each roof a readable silhouette.
-  const roof = bakery ? '#70857a' : objects ? '#929587' : '#8d8b76';
-  rect(c, x - 5, roofY, w + 10, roofH, '#e0c4a3');
-  rect(c, x + 5, roofY + 7, w - 10, roofH - 12, roof);
-  for (let ry = roofY + 15; ry < roofY + roofH - 6; ry += 10) {
-    rect(c, x + 7, ry, w - 14, 2, bakery ? '#61786f' : '#7f816e');
-    for (let rx = x + 10; rx < x + w - 12; rx += 23) {
-      rect(c, rx, ry - 7, 1, 7, '#a7a593');
+    const count = place.id === 'musinsa' ? 2 : 1;
+    for (let roof = 0; roof < count; roof++) {
+      const rw = w / count, rx = x + roof * rw;
+      c.fillStyle = '#646c61'; c.beginPath(); c.moveTo(rx - 5, y + 31);
+      c.lineTo(rx + rw / 2, y + 1); c.lineTo(rx + rw + 5, y + 31); c.closePath(); c.fill();
+      rect(c, rx - 3, y + 31, rw + 6, 5, '#454f48');
     }
-  }
-  rect(c, x - 6, roofY + roofH, w + 12, 8, '#775e4d');
-  rect(c, x - 7, roofY + roofH, w + 14, 3, '#e5cba8');
-  rect(c, x + w - 44, roofY + 18, 26, 24, '#646c61');
-  rect(c, x + w - 48, roofY + 14, 26, 24, '#c4c4ae');
-  rect(c, x + w - 43, roofY + 20, 16, 12, '#939e8e');
-  for (let dx = 0; dx < 4; dx++) rect(c, x + w - 42 + dx * 4, roofY + 21, 1, 10, '#737e71');
-  rect(c, x + 23, roofY - 15, 20, 37, mortar);
-  rect(c, x + 19, roofY - 17, 28, 7, '#e2c8a7');
-  rect(c, x + 25, roofY - 16, 16, 4, '#6b5d50');
-  if (kind === 'objects') {
-    for (let sx = x + 50; sx < x + 150; sx += 36) {
-      rect(c, sx, roofY + 23, 28, 30, '#c3d0bc');
-      rect(c, sx + 3, roofY + 26, 22, 24, '#728e86');
-      rect(c, sx + 4, roofY + 26, 5, 24, '#99b3a0');
+    windowPane(c, 44, 115, 44, 42);
+    windowPane(c, 168, 115, 44, 42);
+    rect(c, 101, 99, 54, 65, '#45554d');
+    rect(c, 107, 104, 42, 55, '#a9b9a9');
+    rect(c, 125, 104, 3, 55, '#55675a');
+  } else if (place.id === 'dior') {
+    rect(c, 28, 60, 200, 12, '#eee9d8');
+    rect(c, 46, 40, 164, 24, '#7c8174');
+    rect(c, 60, 31, 138, 12, '#93998a');
+    for (let xx = 48; xx <= 184; xx += 34) {
+      rect(c, xx, 94, 22, 64, '#70877b');
+      rect(c, xx - 3, 97, 3, 64, '#faf6e6');
+      rect(c, xx + 22, 97, 3, 64, '#faf6e6');
+      rect(c, xx + 4, 87, 14, 7, '#eae5d4');
+      rect(c, xx + 10, 94, 2, 64, '#d7d8c5');
     }
-  }
-  const signY = y + h - 83;
-  const signColor = objects ? '#516c60' : bakery ? '#e9d9ae' : '#f0e3c6';
-  rect(c, x + 21, signY, w - 42, 22, '#8d7457');
-  rect(c, x + 18, signY - 2, w - 36, 21, signColor);
-  c.fillStyle = objects ? '#eee4c9' : '#615b43';
-  c.font = 'bold 11px monospace'; c.textAlign = 'center';
-  c.fillText(name.toUpperCase(), x + w / 2, signY + 12);
-  const facadeY = y + h - 54;
-  windowPane(c, x + 22, facadeY + 4, 44, 34, kind === 'coffee');
-  windowPane(c, x + w - 66, facadeY + 4, 44, 34, kind === 'coffee');
-  rect(c, x + w / 2 - 21, facadeY - 3, 42, 57, '#735b43');
-  rect(c, x + w / 2 - 17, facadeY + 1, 34, 52, objects ? '#4e6659' : '#6d785d');
-  rect(c, x + w / 2 - 12, facadeY + 6, 24, 26, '#afc0a0');
-  rect(c, x + w / 2 + 9, facadeY + 35, 3, 3, '#efd295');
-  rect(c, x + w / 2 - 25, y + h, 50, 5, '#e7d7b6');
-  rect(c, x + w / 2 - 29, y + h + 5, 58, 5, '#cec6a7');
-  if (bakery) {
-    for (let ax = x + 9; ax < x + w - 9; ax += 16) {
-      rect(c, ax, facadeY - 7, 16, 12, (ax - x - 9) % 32 === 0 ? '#d7ae5e' : '#f4e7bd');
-      rect(c, ax, facadeY + 5, 16, 4, (ax - x - 9) % 32 === 0 ? '#bd954b' : '#e0d4ae');
+    shrub(c, 26, 167, 56); shrub(c, 176, 167, 56);
+  } else if (place.id === 'tamburins') {
+    rect(c, 26, 51, 204, 10, '#efeddd');
+    rect(c, 43, 64, 169, 91, '#e9e5d5');
+    rect(c, 65, 99, 129, 65, '#636e5f');
+    rect(c, 71, 105, 117, 59, '#b9c4b0');
+    rect(c, 127, 105, 3, 59, '#edf0df');
+    rect(c, 43, 99, 22, 65, '#d1c7ac');
+    rect(c, 195, 90, 15, 74, '#cec5ad');
+    // Abstract sculptural shapes, rather than reproducing a temporary exhibition.
+    rect(c, 86, 134, 20, 26, '#a8a68b'); rect(c, 89, 124, 14, 12, '#c5bea0');
+  } else {
+    rect(c, 28, 36, 200, 10, '#edf0e3');
+    rect(c, 39, 48, 178, 57, '#889e92');
+    for (let xx = 44; xx < 213; xx += 28) {
+      rect(c, xx, 52, 23, 48, '#b8c8b8'); rect(c, xx, 120, 23, 44, '#90aa9a');
     }
+    rect(c, 28, 105, 200, 12, '#dddccd');
+    rect(c, 31, 117, 6, 48, '#eeede0'); rect(c, 216, 117, 6, 48, '#eeede0');
   }
-  planter(c, x + 9, y + h);
-  planter(c, x + w - 8, y + h);
-  if (kind === 'courtyard') {
-    for (let vy = y + 28; vy < y + h - 30; vy += 15) shrub(c, x + w - 20, vy, 26);
-  }
-  rect(c, x + w + 7, y + h - 24, 19, 29, '#8b7854');
-  rect(c, x + w + 9, y + h - 21, 15, 20, '#3d5e51');
-  rect(c, x + w + 11, y + h - 15, 11, 2, '#e0dfbc');
-  rect(c, x + w + 12, y + h - 10, 9, 2, '#e0dfbc');
+  rect(c, 65, 74, 126, 17, place.id === 'musinsa' ? '#37443e' : '#f0ecda');
+  c.fillStyle = place.id === 'musinsa' ? '#f7f1df' : '#424d43';
+  c.font = 'bold 11px monospace'; c.textAlign = 'center'; c.fillText(place.sign, 128, 86);
+  rect(c, 25, 166, 207, 6, '#c8c5af');
+  planter(c, 37, 164); planter(c, 219, 164);
+  if (place.id === 'scene') table(c, 193, 179);
 }
-
+function path(c: Context, points: Point[]) {
+  c.beginPath(); points.forEach((point, index) => {
+    const x = Math.round(point.x / 2) * 2, y = Math.round(point.y / 2) * 2;
+    if (index === 0) c.moveTo(x, y); else c.lineTo(x, y);
+  });
+}
 export function drawWorld(): HTMLCanvasElement {
   const [canvas, c] = makeCanvas(WORLD.width, WORLD.height);
-  rect(c, 0, 0, WORLD.width, WORLD.height, '#cbd8b7');
-  for (let y = 0; y < WORLD.height; y += 9) {
-    for (let x = 0; x < WORLD.width; x += 11) {
-      const n = noise(x, y);
-      if (n > .7) rect(c, x, y, 3, 2, n > .91 ? '#b8cba1' : '#c1d0ab');
-      if (n < .018) {
-        rect(c, x, y - 2, 2, 4, '#94aa7a');
-        rect(c, x + 3, y - 1, 2, 3, '#94aa7a');
-      }
+  rect(c, 0, 0, WORLD.width, WORLD.height, '#d4d4c1');
+  for (let y = 0; y < WORLD.height; y += 16) for (let x = 0; x < WORLD.width; x += 18) {
+    if (noise(x, y) > .65) rect(c, x, y, 3, 2, '#c9cbbb');
+  }
+  c.lineCap = 'round'; c.lineJoin = 'round';
+  // Continuous street layers preserve the junctions from the geographic source.
+  for (const street of streets) { path(c, street.points); c.strokeStyle = '#b5baa7'; c.lineWidth = street.width + 40; c.stroke(); }
+  for (const street of streets) { path(c, street.points); c.strokeStyle = '#e8e5d3'; c.lineWidth = street.width + 36; c.stroke(); }
+  for (const street of streets) { path(c, street.points); c.strokeStyle = '#c5ccbd'; c.lineWidth = street.width; c.stroke(); }
+  for (const street of streets.filter((s) => s.kind === 'secondary' || s.kind === 'tertiary')) {
+    path(c, street.points); c.strokeStyle = '#e9e5cc'; c.lineWidth = 2; c.setLineDash([18, 24]); c.stroke(); c.setLineDash([]);
+  }
+  for (const building of footprints) {
+    const place = places.find((p) => p.footprintIds.includes(building.id));
+    const xs = building.points.map((p) => p.x), ys = building.points.map((p) => p.y);
+    const x = Math.min(...xs), y = Math.min(...ys), w = Math.max(...xs) - x, h = Math.max(...ys) - y;
+    c.save(); c.translate(5, 7); path(c, building.points); c.closePath(); c.fillStyle = '#aeb4a1'; c.fill(); c.restore();
+    path(c, building.points); c.closePath();
+    c.fillStyle = place ? place.id === 'daelim' || place.id === 'musinsa' ? '#a8765d' : '#e2ddc6' : noise(x, y) > .5 ? '#b9bdab' : '#c8c7b2';
+    c.fill(); c.strokeStyle = place ? '#777963' : '#a5ad99'; c.lineWidth = place ? 3 : 2; c.stroke();
+    c.save(); c.clip();
+    for (let ry = y + 9; ry < y + h - 2; ry += 9) rect(c, x + 3, ry, w - 6, 1, place ? '#968f7660' : '#a3ac9860');
+    if (w > 28 && h > 25) {
+      rect(c, x + w * .55, y + h * .35, 16, 14, '#939e8c');
+      rect(c, x + w * .55 - 2, y + h * .35 - 2, 16, 12, '#dce0cd');
+      for (let line = 0; line < 4; line++) rect(c, x + w * .55 + line * 3, y + h * .35, 1, 7, '#9fac99');
     }
-  }
-  const road = (x: number, y: number, w: number, h: number) => {
-    rect(c, x - 16, y - 16, w + 32, h + 32, '#b5bea4');
-    rect(c, x - 14, y - 14, w + 28, h + 28, '#ebe8d4');
-    rect(c, x, y, w, h, '#d4d8c7');
-    for (let py = y - 12; py < y + h + 12; py += 16) {
-      for (let px = x - 12; px < x + w + 12; px += 24) {
-        if (px < x || px > x + w - 4 || py < y || py > y + h - 4) rect(c, px, py, 1, 10, '#d6d5bf');
-      }
+    if (place) {
+      c.strokeStyle = place.id === 'musinsa' || place.id === 'daelim' ? '#705e4c' : '#f4f0db'; c.lineWidth = 4;
+      c.beginPath(); c.moveTo(x, y + h / 2); c.lineTo(x + w, y + h / 2); c.stroke();
+      if (place.id === 'scene') for (let xx = x + 7; xx < x + w - 8; xx += 18) rect(c, xx, y + h - 15, 13, 10, '#839f90');
+      if (place.id === 'dior') for (let yy = y + 8; yy < y + h - 10; yy += 18) rect(c, x + 5, yy, 11, 13, '#93a594');
+      if (place.id === 'tamburins') rect(c, x + 12, y + 13, w - 24, h - 26, '#cec5a6');
     }
-  };
-  road(32, 424, 1216, 80);
-  road(32, 776, 1216, 80);
-  road(600, 32, 80, 960);
-  road(208, 160, 32, 736);
-  road(1064, 160, 32, 616);
-  for (let x = 56; x < 1220; x += 48) {
-    if (x < 585 || x > 688) {
-      rect(c, x, 462, 20, 2, '#ebe9d1');
-      rect(c, x, 814, 20, 2, '#ebe9d1');
-    }
+    c.restore();
   }
-  for (let y = 64; y < 990; y += 48) {
-    if ((y < 412 || y > 512) && (y < 764 || y > 864)) rect(c, 639, y, 2, 20, '#edead3');
+  // The elevated Line 2 platform is a recognizable starting landmark.
+  const platform = { x: station.x - 300, y: station.y - 24 };
+  rect(c, platform.x + 8, platform.y + 12, 618, 54, '#9fae99');
+  rect(c, platform.x, platform.y, 618, 52, '#66786c');
+  rect(c, platform.x + 5, platform.y + 6, 608, 32, '#c7d0b9');
+  rect(c, platform.x + 5, platform.y + 40, 608, 7, '#578263');
+  for (let x = platform.x + 15; x < platform.x + 608; x += 26) rect(c, x, platform.y + 9, 20, 26, '#a8b9a5');
+  rect(c, station.x - 105, platform.y + 12, 210, 26, '#f1efdd');
+  c.fillStyle = '#425f48'; c.font = 'bold 13px monospace'; c.textAlign = 'center'; c.fillText('② SEONGSU STATION', station.x, platform.y + 30);
+  for (const exit of exits) {
+    rect(c, exit.x - 14, exit.y - 10, 28, 28, '#768c6e');
+    for (let sy = 0; sy < 5; sy++) rect(c, exit.x - 10, exit.y - 5 + sy * 4, 20, 2, '#d4d9bd');
+    rect(c, exit.x - 12, exit.y - 21, 24, 15, '#4d7755');
+    c.fillStyle = '#fff7dc'; c.font = 'bold 10px monospace'; c.fillText(exit.number, exit.x, exit.y - 10);
   }
-  for (const y of [407, 512, 759, 864]) {
-    for (let x = 603; x < 681; x += 13) rect(c, x, y, 8, 12, '#f7f4de');
+  // Only selected landmarks carry nameplates: mobile streets stay readable.
+  for (const place of places) {
+    const b = place.building;
+    c.font = 'bold 9px monospace';
+    const width = c.measureText(place.sign).width + 14;
+    rect(c, b.x + b.w / 2 - width / 2, b.y + b.h / 2 - 8, width, 17, '#f4efda');
+    c.fillStyle = '#4f5b4c'; c.fillText(place.sign, b.x + b.w / 2, b.y + b.h / 2 + 4);
   }
-  // Smaller lanes and pocket plazas make the compressed town feel lived in.
-  rect(c, 264, 168, 248, 40, '#dce0c6');
-  rect(c, 792, 168, 264, 56, '#dce0c6');
-  rect(c, 248, 528, 296, 40, '#dce0c6');
-  rect(c, 776, 528, 272, 40, '#dce0c6');
-  for (const b of buildings.slice(4)) drawBuilding(c, b.x, b.y, b.w, b.h, 'plain', b.x < 200 ? 'LOCAL STUDIO' : 'SEONGSU');
-  for (const p of places.filter((place) => place.kind !== 'garden')) {
-    drawBuilding(c, p.building.x, p.building.y, p.building.w, p.building.h, p.kind, p.name);
-  }
-  // Public square, little garden, flowers, and a low picket fence.
-  rect(c, 1112, 560, 132, 200, '#bdce9e');
-  rect(c, 1144, 610, 22, 166, '#e7dcc0');
-  rect(c, 1114, 664, 121, 18, '#e7dcc0');
-  for (let fy = 564; fy < 758; fy += 20) {
-    rect(c, 1110, fy, 4, 16, '#f0e6c8');
-    rect(c, 1240, fy, 4, 16, '#f0e6c8');
-  }
-  rect(c, 1110, 570, 4, 180, '#e6dabb');
-  rect(c, 1240, 570, 4, 180, '#e6dabb');
-  bench(c, 1175, 710);
-  bench(c, 1120, 625);
-  for (let i = 0; i < 22; i++) {
-    const x = 1119 + Math.round(noise(i, 1) * 112);
-    const y = 684 + Math.round(noise(i, 7) * 22);
-    rect(c, x, y, 2, 6, '#789660');
-    rect(c, x - 1, y - 2, 4, 3, i % 2 ? '#e5c883' : '#dca88a');
-  }
-  const trees: [number, number, number][] = [
-    [41, 72, 1.3], [103, 80, 1.5], [158, 68, 1.15], [315, 85, 1.4], [373, 128, 1.6],
-    [451, 63, 1.4], [528, 172, 1], [760, 224, 1.4], [1008, 195, 1.1],
-    [1157, 116, 1.7], [1220, 87, 1.5], [1264, 160, 1.3],
-    [30, 559, 1.1], [104, 541, 1.3], [179, 568, 1],
-    [527, 641, 1.25], [535, 717, 1], [750, 585, 1.35],
-    [1146, 603, 1.15], [1213, 618, 1.5], [1226, 748, 1],
-    [45, 940, 1.6], [119, 978, 1.4], [181, 928, 1.3],
-    [522, 981, 1.2], [731, 982, 1.4], [1067, 990, 1.5], [1133, 924, 1.15], [1213, 978, 1.55],
-  ];
-  for (const [x, y, size] of trees) tree(c, x, y, size);
-  for (const [x, y, w] of [[280, 154, 170], [802, 197, 130], [300, 557, 165], [825, 555, 150], [300, 886, 110]]) shrub(c, x!, y!, w);
-  table(c, 535, 377, true);
-  table(c, 768, 357, true);
-  table(c, 531, 791, true);
-  bench(c, 723, 699);
-  bench(c, 76, 399);
-  bike(c, 256, 412);
-  bike(c, 1006, 765);
-  bike(c, 770, 412);
-  for (const [x, y] of [[570, 413], [708, 415], [570, 769], [708, 771], [1153, 529], [120, 879]]) lamp(c, x!, y!);
-  for (const [x, y] of [[560, 233], [755, 539], [557, 849]]) {
-    rect(c, x!, y!, 18, 27, '#76886e');
-    rect(c, x! - 2, y! - 3, 22, 5, '#536d56');
-    rect(c, x! + 4, y! + 4, 3, 17, '#98a480');
-  }
-  // Utility poles and stepped overhead wires, drawn on the same pixel grid.
-  for (const x of [199, 704, 1109]) {
-    rect(c, x, 384, 5, 40, '#8b805f');
-    rect(c, x - 10, 380, 25, 4, '#6c6e58');
-  }
-  for (let x = 204; x < 1110; x += 3) {
-    const local = (x - 204) % 500;
-    const y = 381 + Math.round(Math.sin(local / 500 * Math.PI) * 21);
-    rect(c, x, y, 3, 1, '#8a917b');
-  }
-  c.save(); c.fillStyle = '#9da990'; c.font = 'bold 10px monospace'; c.textAlign = 'center';
-  c.fillText('BRICK LANE', 402, 485); c.fillText('SLOW STREET', 866, 838);
-  c.translate(624, 653); c.rotate(-Math.PI / 2); c.fillText('SEONGSU WALK', 0, 0); c.restore();
+  for (const [x, y] of [[625, 255], [965, 265], [1180, 263], [1320, 266]]) { tree(c, x!, y!, .65); }
+  table(c, 435, 398, true); bench(c, 460, 410); bike(c, 642, 275);
+  for (const [x, y] of [[465, 264], [935, 796], [1370, 965]]) lamp(c, x!, y!);
+  // Labels follow the map orientation (21° counterclockwise from north-up).
+  c.fillStyle = '#768571'; c.font = 'bold 12px monospace';
+  c.fillText('ACHASAN-RO · 아차산로', 590, 211);
+  c.fillText('YEONMUJANG-GIL · 연무장길', 930, 937);
+  c.save(); c.translate(343, 553); c.rotate(-Math.PI / 2); c.fillText('YEONMUJANG 5-GIL', 0, 0); c.restore();
+  c.save(); c.translate(1410, 608); c.rotate(-Math.PI / 2); c.fillText('SEONGSUI-RO · 성수이로', 0, 0); c.restore();
   return canvas;
 }
 
@@ -370,17 +324,7 @@ export function placePreview(place: Place): string {
   if (cached) return cached;
   const [canvas, c] = makeCanvas(256, 192);
   rect(c, 0, 0, 256, 192, place.tint);
-  if (place.kind === 'garden') {
-    rect(c, 0, 138, 256, 54, '#bdce9e');
-    rect(c, 110, 80, 24, 112, '#e7dcc0');
-    tree(c, 73, 137, 1.8);
-    tree(c, 197, 119, 1.6);
-    bench(c, 155, 159);
-    shrub(c, 23, 171, 56);
-  } else {
-    drawBuilding(c, 35, 32, 180, 144, place.kind, place.name);
-    tree(c, 17, 134, .9);
-  }
+  drawLandmark(c, place);
   const data = canvas.toDataURL('image/png');
   previews.set(place.id, data);
   return data;

@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
+import { streets } from '../data/geography';
 import { drawDog, drawScooter, drawWalker, drawWorld } from './art';
-import { buildings, canWalk, findPath } from './navigation';
+import { canWalk, findPath } from './navigation';
 import { places, SPAWN, WORLD } from '../data/places';
 import type { PlaceId, Point, TimeOfDay } from '../data/places';
 
@@ -42,6 +43,7 @@ class Neighborhood extends Phaser.Scene {
   private nighttime!: Phaser.GameObjects.Rectangle;
   private lamps!: Phaser.GameObjects.Graphics;
   private npcs: Phaser.GameObjects.Sprite[] = [];
+  private npcRoutes: { from: Point; to: Point }[] = [];
   private nearby: PlaceId | null = null;
   private path: Point[] = [];
   private manual: Direction | null = null;
@@ -50,6 +52,7 @@ class Neighborhood extends Phaser.Scene {
   private simulationPaused = false;
   private inputAllowed: boolean;
   private ready = false;
+  private lastWalkable: Point = { ...SPAWN };
   private reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   private options: WorldOptions;
 
@@ -82,17 +85,13 @@ class Neighborhood extends Phaser.Scene {
     this.textures.addCanvas('dog', drawDog());
     this.textures.addCanvas('scooter', drawScooter());
     this.physics.world.setBounds(24, 24, WORLD.width - 48, WORLD.height - 48);
-    const obstacles = this.physics.add.staticGroup();
-    for (const b of buildings) {
-      const obstacle = this.add.rectangle(b.x + b.w / 2, b.y + b.h / 2, b.w, b.h, 0, 0);
-      obstacles.add(obstacle);
-    }
     const initial = canWalk(this.options.position) ? this.options.position : SPAWN;
+    this.lastWalkable = { x: initial.x, y: initial.y };
     this.avatar = this.physics.add.sprite(initial.x, initial.y, 'visitor-2-0').setOrigin(.5, 1).setDepth(20);
     this.avatar.body.setSize(10, 8);
     this.avatar.body.setOffset(7, 26);
     this.avatar.setCollideWorldBounds(true);
-    this.physics.add.collider(this.avatar, obstacles);
+
     this.playerArrow = this.add.graphics().setDepth(21);
     this.playerArrow.fillStyle(0xfff6d8).fillRect(-6, -1, 12, 5).fillRect(-4, 4, 8, 2).fillRect(-2, 6, 4, 2);
     this.playerArrow.fillStyle(0xd17b4a).fillRect(-4, 0, 8, 2).fillRect(-2, 2, 4, 2);
@@ -134,23 +133,25 @@ class Neighborhood extends Phaser.Scene {
       const label = this.add.text(0, 12, place.number, {
         fontFamily: 'monospace', fontSize: '13px', fontStyle: 'bold', color: place.color,
       }).setOrigin(.5);
-      const container = this.add.container(place.entrance.x, place.entrance.y - 56, [graphic, label]).setDepth(12);
+      const container = this.add.container(place.entrance.x, place.entrance.y - 56, [graphic, label]).setDepth(12).setScale(this.scale.width < 600 ? .72 : .9);
       this.markers.set(place.id, container);
     }
   }
 
   private createNeighbors() {
-    const positions = [
-      [180, 483], [720, 480], [1050, 482], [594, 640], [990, 837],
-      [420, 838], [718, 348], [690, 922], [345, 441],
-    ];
-    positions.forEach(([x, y], index) => {
-      const npc = this.add.sprite(x!, y!, (index % 2 ? 'friend' : 'neighbor') + '-2-0').setOrigin(.5, 1).setDepth(19);
-      this.npcs.push(npc);
+    const candidates = streets.flatMap((street) => street.points.slice(1).map((end, index) => {
+      const start = street.points[index]!;
+      const length = Math.hypot(end.x - start.x, end.y - start.y);
+      const middle = { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 };
+      const span = Math.min(60, length / 3);
+      return { from: { x: middle.x - (end.x - start.x) / length * span, y: middle.y - (end.y - start.y) / length * span },
+        to: { x: middle.x + (end.x - start.x) / length * span, y: middle.y + (end.y - start.y) / length * span }, length };
+    })).filter((route) => route.length > 160 && canWalk(route.from) && canWalk(route.to));
+    this.npcRoutes = candidates.slice(0, 8);
+    this.npcRoutes.forEach((route, index) => {
+      const texture = index === 6 ? 'dog' : index === 7 ? 'scooter' : (index % 2 ? 'friend' : 'neighbor') + '-2-0';
+      this.npcs.push(this.add.sprite(route.from.x, route.from.y, texture).setOrigin(.5, 1).setDepth(19));
     });
-    const dog = this.add.sprite(760, 480, 'dog').setOrigin(.5, 1).setDepth(19);
-    this.npcs.push(dog);
-    this.npcs.push(this.add.sprite(190, 500, 'scooter').setOrigin(.5, 1).setDepth(19));
   }
 
   private detectNearby() {
@@ -169,17 +170,17 @@ class Neighborhood extends Phaser.Scene {
     this.lamps.clear();
     if (period === 'night') {
       this.lamps.fillStyle(0xffda83, .8);
-      for (const p of places.filter((item) => item.kind !== 'garden')) {
+      for (const p of places) {
         const b = p.building;
-        this.lamps.fillRect(b.x + 26, b.y + b.h - 46, 16, 11);
-        this.lamps.fillRect(b.x + b.w - 62, b.y + b.h - 46, 16, 11);
+        this.lamps.fillRect(b.x + 8, b.y + b.h - 14, 12, 7);
+        this.lamps.fillRect(b.x + b.w - 20, b.y + b.h - 14, 12, 7);
       }
-      for (const [x, y] of [[570, 413], [708, 415], [570, 769], [708, 771], [1153, 529], [120, 879]]) {
+      for (const [x, y] of [[465, 264], [935, 796], [1370, 965]]) {
         this.lamps.fillStyle(0xffe29e, .9).fillRect(x! - 5, y! - 62, 11, 10);
         this.lamps.fillStyle(0xffda83, .08).fillRect(x! - 19, y! - 75, 38, 37);
       }
     }
-    const count = period === 'morning' ? 4 : period === 'night' ? 6 : 11;
+    const count = period === 'morning' ? 3 : period === 'night' ? 4 : 8;
     this.npcs.forEach((npc, index) => npc.setVisible(index < count));
   }
 
@@ -264,6 +265,7 @@ class Neighborhood extends Phaser.Scene {
     this.stop();
     this.avatar.setPosition(SPAWN.x, SPAWN.y);
     this.avatar.body.reset(SPAWN.x, SPAWN.y);
+    this.lastWalkable = { ...SPAWN };
     this.cameras.main.centerOn(SPAWN.x, SPAWN.y);
     this.detectNearby();
     this.options.onPosition({ ...SPAWN });
@@ -278,27 +280,24 @@ class Neighborhood extends Phaser.Scene {
     if (this.ready) this.cameras.main.centerOn(this.avatar.x, this.avatar.y);
   }
 
-  update(time: number) {
+  update(time: number, delta: number) {
     if (!this.ready || this.simulationPaused) return;
+    // Arcade can integrate a fixed physics step before Scene.update. Validate the
+    // actual result too, so a frame-time change cannot carry feet through a wall.
+    if (!canWalk(this.avatar)) this.avatar.body.reset(this.lastWalkable.x, this.lastWalkable.y);
+    else this.lastWalkable = { x: this.avatar.x, y: this.avatar.y };
     this.playerArrow.setPosition(this.avatar.x, this.avatar.y - 45);
     const frame = Math.floor(time / 160) % 3;
     if (!this.reducedMotion) {
       this.npcs.forEach((npc, index) => {
         if (!npc.visible) return;
-        if (index < 3) {
-          const origin = [180, 720, 1050][index]!;
-          npc.x = origin + Math.sin(time / 4200 + index) * 75;
-          npc.setTexture((index % 2 ? 'friend' : 'neighbor') + '-' + (Math.cos(time / 4200 + index) > 0 ? 1 : 3) + '-' + frame);
-        } else if (index === 9) {
-          npc.x = 755 + Math.sin(time / 4200 + 1) * 75;
-          npc.setFlipX(Math.cos(time / 4200 + 1) < 0);
-        } else if (index === 10) {
-          npc.x = 660 + Math.sin(time / 8200) * 475;
-          npc.setFlipX(Math.cos(time / 8200) < 0);
-        } else if (index === 4 || index === 5) {
-          npc.x = (index === 4 ? 990 : 420) + Math.sin(time / 5700 + index) * 40;
-          npc.setTexture((index % 2 ? 'friend' : 'neighbor') + '-' + (Math.cos(time / 5700 + index) > 0 ? 1 : 3) + '-' + frame);
-        }
+        const route = this.npcRoutes[index]!;
+        const fraction = (Math.sin(time / 5200 + index) + 1) / 2;
+        const point = { x: route.from.x + (route.to.x - route.from.x) * fraction,
+          y: route.from.y + (route.to.y - route.from.y) * fraction };
+        if (canWalk(point)) npc.setPosition(point.x, point.y);
+        if (index < 6) npc.setTexture((index % 2 ? 'friend' : 'neighbor') + '-' + (Math.cos(time / 5200 + index) > 0 ? 1 : 3) + '-' + frame);
+        else npc.setFlipX(Math.cos(time / 5200 + index) < 0);
       });
     }
     if (!this.inputAllowed) { this.avatar.setVelocity(0); return; }
@@ -319,14 +318,22 @@ class Neighborhood extends Phaser.Scene {
       vx = direction === 'left' ? -speed : direction === 'right' ? speed : 0;
       vy = direction === 'up' ? -speed : direction === 'down' ? speed : 0;
     } else if (this.path.length) {
-      const target = this.path[0]!;
-      const dx = target.x - this.avatar.x;
-      const dy = target.y - this.avatar.y;
-      if (Math.abs(dx) < 3 && Math.abs(dy) < 3) {
-        this.path.shift();
-        if (!this.path.length) { this.routeInk.clear(); this.options.onNavigating(false); }
-      } else if (Math.abs(dx) >= 3) vx = Math.sign(dx) * Math.min(speed, Math.abs(dx) * 24);
-      else vy = Math.sign(dy) * Math.min(speed, Math.abs(dy) * 24);
+      while (this.path.length && Math.hypot(this.path[0]!.x - this.avatar.x, this.path[0]!.y - this.avatar.y) < 3) this.path.shift();
+      const target = this.path[0];
+      if (!target) { this.routeInk.clear(); this.options.onNavigating(false); }
+      else {
+        const dx = target.x - this.avatar.x, dy = target.y - this.avatar.y;
+        const distance = Math.hypot(dx, dy);
+        const velocity = Math.min(speed, distance / (Math.max(1, delta) / 1000));
+        vx = dx / distance * velocity; vy = dy / distance * velocity;
+      }
+    }
+    // Polygon buildings and the street envelope are shared with route finding.
+    // Predict the physics step so held keys cannot cross façades or private blocks.
+    const dt = Math.min(50, delta) / 1000;
+    if ((vx || vy) && !canWalk({ x: this.avatar.x + vx * dt, y: this.avatar.y + vy * dt })) {
+      vx = 0; vy = 0;
+      if (this.path.length) { this.stop(); this.options.onBlocked(); }
     }
     this.avatar.setVelocity(vx, vy);
     if (vx || vy) this.direction = vx > 0 ? 1 : vx < 0 ? 3 : vy > 0 ? 2 : 0;

@@ -67,3 +67,16 @@ Vite emits a large-chunk warning for the game-engine chunk. The UI and engine ar
 ## Limits
 
 No physical iPhone/Android testing, full accessibility conformance audit, real geographic-data validation, photography, 3D scanning, PWA offline reload test, native app export, remote analytics, or public deployment has been performed.
+
+## 2026-09-06 — Real Seongsu neighborhood
+
+- `npm test`: 7/7 passed. Validates progress sanitization, collection, persistence, route collision safety, and all 36 combinations of spawn + five arrival points, including the start/end connecting segments.
+- `npm run build`: TypeScript and production build passed. The existing Phaser engine chunk still triggers Vite's >500kB advisory; it remains lazy-loaded.
+- `tests/browser.mjs`: 17 checks passed against the production preview on localhost:5198. Actually walked to all five real stops; collected the full passport; checked English/Japanese, reload, favorites, reset and storage denial. The legacy fictional passport remained byte-for-byte unchanged after the new route and reset.
+- `tests/interaction.mjs`: 7 checks passed. Held movement stops at the Scène polygon; Enter opens the nearby stop; pause/return, camera tools, context-loss retry and 320–1440px Japanese layouts passed. The measured 120 visible-page RAF samples were median 8.3ms / p95 10.1ms on this desktop; this is not phone GPU performance.
+- `tests/fullscreen.mjs`: 8 checks passed against the production preview. Native fullscreen, unsupported/rejected fallback, rotation, outside-tap behavior, exit, same-canvas preservation and desktop Escape/external exit passed. A development-server run during ongoing edits had an Escape timeout; the stable production-preview run passed.
+- Additional final-build check: all five detail pages show their real addresses and exact Naver Place links. The OSM credit remains visible in fullscreen and participates in the fallback's forward/backward Tab focus cycle.
+- Visual review: desktop, mobile play, place detail and whole-world render. The Codex in-app browser also loaded the new map successfully at localhost:5173.
+- Screenshots and machine-readable reports are in ignored `artifacts/`. These are separate test browser contexts; the user's current browser progress was not cleared.
+
+The available OSM geometry is simplified for play. No on-site doorway survey, up-to-the-minute business verification, physical iPhone/Android test, public deployment or remote Git write was performed. Research provenance: [REAL_NEIGHBORHOOD.md](REAL_NEIGHBORHOOD.md).
