@@ -249,8 +249,51 @@ export function drawWorld(): HTMLCanvasElement {
 
 export function drawWalker(direction: number, frame: number, outfit = '#e38154'): HTMLCanvasElement {
   const [canvas, c] = makeCanvas(24, 34);
-  const step = frame === 0 ? 0 : frame === 1 ? -2 : 2;
   rect(c, 4, 30, 17, 3, '#737c6255');
+  if (direction === 1 || direction === 3) {
+    // Mirror one true profile, keeping the feet and physics origin unchanged.
+    if (direction === 3) { c.translate(24, 0); c.scale(-1, 1); }
+    const passing = frame === 2 || frame === 4;
+    const bob = passing ? -1 : 0;
+    const stride = frame === 1 ? 1 : frame === 3 ? -1 : 0;
+    const limb = (points: readonly Point[], color: string) => {
+      for (let i = 1; i < points.length; i++) {
+        const a = points[i - 1]!, b = points[i]!;
+        const length = Math.max(Math.abs(b.x - a.x), Math.abs(b.y - a.y), 1);
+        for (let step = 0; step <= length; step++) {
+          rect(c, a.x + (b.x - a.x) * step / length - 1,
+            a.y + (b.y - a.y) * step / length - 1, 3, 3, color);
+        }
+      }
+    };
+    const farFoot = { x: 11 - stride * 5, y: frame === 2 ? 29 : 31 };
+    const nearFoot = { x: 12 + stride * 5, y: frame === 4 ? 29 : 31 };
+    // The far limbs sit behind the narrow torso; arms counter-swing to the legs.
+    limb([{ x: 11, y: 24 + bob }, { x: 11 - stride * 2, y: 27 }, farFoot], '#3e4a42');
+    rect(c, farFoot.x - 1, farFoot.y, 5, 2, '#303e38');
+    limb([{ x: 13, y: 17 + bob }, { x: 14 + stride * 2, y: 21 + bob },
+      { x: 14 + stride * 4, y: 24 + bob }], '#c39c7a');
+    limb([{ x: 12, y: 24 + bob }, { x: frame === 4 ? 15 : 12 + stride * 3, y: 27 }, nearFoot], '#5d6857');
+    rect(c, nearFoot.x - 1, nearFoot.y, 5, 2, '#36443e');
+    rect(c, 9, 15 + bob, 9, 11, outfit === '#db7750' ? '#f1e6cc' : outfit);
+    rect(c, 5, 17 + bob, 5, 10, outfit);
+    rect(c, 5, 19 + bob, 2, 5, '#f0ad72');
+    rect(c, 10, 15 + bob, 2, 9, outfit);
+    limb([{ x: 13, y: 18 + bob }, { x: 13 - stride * 2, y: 22 + bob },
+      { x: 13 - stride * 4, y: 25 + bob }], '#e2c09a');
+    rect(c, 11, 16 + bob, 5, 4, outfit === '#db7750' ? '#e5dabf' : outfit);
+    rect(c, 12, 12 + bob, 4, 4, '#d5aa84');
+    rect(c, 9, 5 + bob, 10, 9, '#e6bc94');
+    rect(c, 17, 12 + bob, 3, 3, '#e6bc94');
+    rect(c, 19, 10 + bob, 3, 3, '#e6bc94');
+    rect(c, 7, 3 + bob, 12, 6, '#4b453b');
+    rect(c, 10, 1 + bob, 7, 3, '#4b453b');
+    rect(c, 7, 8 + bob, 4, 5, '#4b453b');
+    rect(c, 10, 9 + bob, 3, 3, '#d5aa84');
+    rect(c, 17, 9 + bob, 2, 2, '#3c4135');
+    return canvas;
+  }
+  const step = frame === 1 ? -2 : frame === 3 ? 2 : 0;
   rect(c, 7, 25, 4, 6 + step, '#4e594c');
   rect(c, 14, 25, 4, 6 - step, '#4e594c');
   rect(c, 6, 30 + step, 5, 3, '#36443e');
@@ -266,11 +309,6 @@ export function drawWalker(direction: number, frame: number, outfit = '#e38154')
     rect(c, 7, 6, 12, 9, '#4b453b');
     rect(c, 8, 17, 10, 10, outfit);
     rect(c, 10, 19, 6, 4, '#f0ad72');
-  } else if (direction === 1 || direction === 3) {
-    const left = direction === 3;
-    rect(c, left ? 6 : 17, 10, 2, 2, '#3c4135');
-    rect(c, left ? 16 : 5, 17, 5, 11, outfit);
-    rect(c, left ? 5 : 19, 12, 3, 3, '#e6bc94');
   } else {
     rect(c, 9, 10, 2, 2, '#3c4135');
     rect(c, 16, 10, 2, 2, '#3c4135');

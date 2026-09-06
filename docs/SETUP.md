@@ -23,14 +23,15 @@ tests/browser.mjs는 설치되어 있는 Playwright와 Chrome을 사용한다. �
     PLAYWRIGHT_MODULE_PATH=/path/to/existing/node_modules/playwright node tests/browser.mjs
     PLAYWRIGHT_MODULE_PATH=/path/to/existing/node_modules/playwright node tests/interaction.mjs
     PLAYWRIGHT_MODULE_PATH=/path/to/existing/node_modules/playwright node tests/fullscreen.mjs
+    PLAYWRIGHT_MODULE_PATH=/path/to/existing/node_modules/playwright node tests/keyboard-entry.mjs
 
 DEMO_URL로 테스트할 로컬 주소를 바꿀 수 있다. 결과와 스크린샷은 Git에서 제외된 artifacts/에 기록한다. 테스트는 별도 브라우저 컨텍스트를 사용하므로 사용자가 열어놓은 브라우저의 여권을 초기화하지 않는다.
 
 ## Manual checks
 
-1. 처음 시작해 키보드 또는 터치 패드로 이동한다.
+1. 처음 시작해 키보드 또는 터치 패드로 이동한다. 좌우로 걸을 때 옆모습과 교차하는 발·팔 동작을 확인한다.
 2. 장소를 선택하고 자동 보행이 건물에 막히지 않는지 확인한다.
-3. 근접한 장소에 들어가 도장을 받은 뒤 돌아오면 같은 위치인지 확인한다.
+3. 도착 카드가 보이면 E 또는 Enter로 들어간다. 모바일에서는 카드를 탭한다. 도장을 받은 뒤 돌아오면 같은 위치인지 확인한다.
 4. 밤·일본어로 바꾸고 새로고침해서 선택과 도장이 남는지 확인한다.
 5. 다섯 장소를 완주하고 여권·즐겨찾기를 확인한다.
 6. 모바일에서 방향 패드를 누른 채 영역 밖으로 이동하거나 손가락을 취소해도 이동이 멈추는지 확인한다.

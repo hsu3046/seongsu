@@ -80,3 +80,11 @@ No physical iPhone/Android testing, full accessibility conformance audit, real g
 - Screenshots and machine-readable reports are in ignored `artifacts/`. These are separate test browser contexts; the user's current browser progress was not cleared.
 
 The available OSM geometry is simplified for play. No on-site doorway survey, up-to-the-minute business verification, physical iPhone/Android test, public deployment or remote Git write was performed. Research provenance: [REAL_NEIGHBORHOOD.md](REAL_NEIGHBORHOOD.md).
+
+## 2026-09-06 — Side walking and keyboard entry
+
+- `npm run build` and all 7 unit tests passed. No dependencies were added.
+- `tests/keyboard-entry.mjs`: 7 checks passed against localhost:5198. E opens the matching detail at each of the five real arrival points without collecting a stamp. Enter also works with the fullscreen button focused and exits fullscreen into the detail view. Repeated held keys do not reopen a place after returning; fresh presses do. Tab/Enter button navigation, paused overlays, typing, modified keys, Japanese mobile layout and touch entry passed. No page exceptions.
+- `tests/interaction.mjs`: all 7 existing checks passed, including actual arrow movement, route arrival + Enter, building collision and cleared movement after returning.
+- Visual inspection: all four directional sprites, idle and four gait poses, plus desktop and mobile arrival cards. The side profile has a narrow silhouette, rear backpack, visible nose/ear and alternating leg/arm positions. Sprite canvas, foot origin and collision dimensions remain unchanged.
+- Reports: artifacts/keyboard-entry-report.json and interaction-report.json. Visuals: artifacts/walker-poses.png, keyboard-arrival-desktop.png and keyboard-arrival-mobile.png. Physical phone testing remains separate.

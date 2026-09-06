@@ -145,6 +145,8 @@ kbd { font-family: inherit; border: 1px solid #dedfd2; border-radius: 3px; displ
 .arrival-button small, .arrival-button strong { display: block; text-align: left; }
 .arrival-button small { font-size: 8px; margin-bottom: 4px; color: #8d9075; letter-spacing: .6px; }
 .arrival-button strong { font-size: 12px; font-weight: 600; }.arrival-button > svg { color: #b77b4c; margin-left: 8px; }
+.arrival-key-hint { display: block; margin-top: 6px; color: #697451; font-size: 9px; text-align: left; }
+@media (hover: none), (pointer: coarse) { .arrival-key-hint { display: none; } }
 .walking-badge { position: absolute; bottom: 27px; left: 50%; transform: translateX(-50%); padding: 11px 14px; display: flex; align-items: center; gap: 10px; background: #fffae7ed; border-radius: 6px; box-shadow: 0 2px 9px #5b67451c; font-size: 10px; }
 .walking-dot { width: 6px; height: 6px; border-radius: 50%; background: #9aab76; animation: pulse 1s infinite alternate; }
 .direction-pad { display: none; }

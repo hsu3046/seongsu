@@ -206,9 +206,9 @@ export default function App() {
                 <h2>{t.welcome}</h2><p>{t.startNote}</p>
                 <button className="button primary" onClick={startWalk}>{t.start}<Icon name="arrow" size={18} /></button>
               </div>}
-              {progress.started && nearby && <button className="arrival-button" onClick={() => openPlace(nearby)}>
+              {progress.started && nearby && <button className="arrival-button" aria-keyshortcuts="E Enter" onClick={() => openPlace(nearby)}>
                 <span className="arrival-icon"><Icon name={findPlace(nearby).kind} size={22} /></span>
-                <span><small>{t.visit}</small><strong>{findPlace(nearby).name}</strong></span><Icon name="arrow" size={20} />
+                <span><small>{t.visit}</small><strong>{findPlace(nearby).name}</strong><span className="arrival-key-hint">{t.enter}</span></span><Icon name="arrow" size={20} />
               </button>}
               {progress.started && navigating && !nearby && <button className="walking-badge" onClick={() => controller.current?.stop()}><span className="walking-dot" />{t.walking}<Icon name="close" size={14} /><span className="sr-only">{t.stopWalking}</span></button>}
               {progress.started && <div className="direction-pad" role="group" aria-label={t.mapLabel}>

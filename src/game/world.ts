@@ -48,6 +48,7 @@ class Neighborhood extends Phaser.Scene {
   private path: Point[] = [];
   private manual: Direction | null = null;
   private direction = 2;
+  private walkTime = 0;
   private lastSave = 0;
   private simulationPaused = false;
   private inputAllowed: boolean;
@@ -76,7 +77,7 @@ class Neighborhood extends Phaser.Scene {
     this.add.image(0, 0, 'neighborhood-art').setOrigin(0);
     for (const outfit of ['visitor', 'neighbor', 'friend']) {
       for (let direction = 0; direction < 4; direction++) {
-        for (let frame = 0; frame < 3; frame++) {
+        for (let frame = 0; frame < 5; frame++) {
           this.textures.addCanvas(outfit + '-' + direction + '-' + frame,
             drawWalker(direction, frame, outfit === 'visitor' ? '#db7750' : outfit === 'friend' ? '#89996c' : '#778f9a'));
         }
@@ -106,10 +107,9 @@ class Neighborhood extends Phaser.Scene {
     this.cameras.main.centerOn(initial.x, initial.y);
     this.cameras.main.setRoundPixels(true);
     if (this.input.keyboard) {
-      this.controls = this.input.keyboard.addKeys('W,A,S,D,UP,RIGHT,DOWN,LEFT,ENTER', false) as Record<string, Phaser.Input.Keyboard.Key>;
-      this.input.keyboard.on('keydown-ENTER', () => {
-        if (!this.simulationPaused && this.inputAllowed && this.nearby) this.options.onVisit(this.nearby);
-      });
+      this.controls = this.input.keyboard.addKeys('W,A,S,D,UP,RIGHT,DOWN,LEFT,E,ENTER', false) as Record<string, Phaser.Input.Keyboard.Key>;
+      this.input.keyboard.on('keydown-E', this.enterNearby, this);
+      this.input.keyboard.on('keydown-ENTER', this.enterNearby, this);
     }
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       if (this.simulationPaused || !this.inputAllowed) return;
@@ -161,6 +161,22 @@ class Neighborhood extends Phaser.Scene {
       this.nearby = id;
       this.options.onNear(id);
     }
+  }
+
+  private enterNearby(event: KeyboardEvent) {
+    if (this.simulationPaused || !this.inputAllowed || !this.nearby
+      || event.repeat || event.isComposing || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    const target = event.target;
+    if (target instanceof HTMLElement) {
+      if (target.isContentEditable || target.closest('input, textarea, select, [role="textbox"]')) return;
+      // Tab navigation keeps native Enter activation. E remains the RPG action key.
+      if (event.key === 'Enter' && target.closest('button, a, [role="button"]')
+        && target.closest('[data-keyboard-navigation="true"]')) return;
+    }
+    // Cancel only a valid interaction, so a previously clicked UI button cannot
+    // also activate on Enter. Movement scrolling still belongs to Phaser capture.
+    event.preventDefault();
+    this.options.onVisit(this.nearby);
   }
 
   setTime(period: TimeOfDay) {
@@ -287,7 +303,7 @@ class Neighborhood extends Phaser.Scene {
     if (!canWalk(this.avatar)) this.avatar.body.reset(this.lastWalkable.x, this.lastWalkable.y);
     else this.lastWalkable = { x: this.avatar.x, y: this.avatar.y };
     this.playerArrow.setPosition(this.avatar.x, this.avatar.y - 45);
-    const frame = Math.floor(time / 160) % 3;
+    const frame = 1 + Math.floor(time / 120) % 4;
     if (!this.reducedMotion) {
       this.npcs.forEach((npc, index) => {
         if (!npc.visible) return;
@@ -336,8 +352,13 @@ class Neighborhood extends Phaser.Scene {
       if (this.path.length) { this.stop(); this.options.onBlocked(); }
     }
     this.avatar.setVelocity(vx, vy);
-    if (vx || vy) this.direction = vx > 0 ? 1 : vx < 0 ? 3 : vy > 0 ? 2 : 0;
-    this.avatar.setTexture('visitor-' + this.direction + '-' + (vx || vy ? frame : 0));
+    if (vx || vy) {
+      this.direction = vx > 0 ? 1 : vx < 0 ? 3 : vy > 0 ? 2 : 0;
+      this.walkTime += Math.min(50, delta) * Math.hypot(vx, vy) / speed;
+    } else this.walkTime = 0;
+    // Idle is separate from the four-step gait; slow path segments slow the stride.
+    const walkFrame = vx || vy ? 1 + Math.floor(this.walkTime / 120) % 4 : 0;
+    this.avatar.setTexture('visitor-' + this.direction + '-' + walkFrame);
     this.detectNearby();
     if (time - this.lastSave > 1000) {
       this.lastSave = time;
