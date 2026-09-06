@@ -1,7 +1,8 @@
 import { placeIds, SPAWN, WORLD } from '../data/places.ts';
 import type { Locale, PlaceId, Point, TimeOfDay } from '../data/places.ts';
 
-export const STORAGE_KEY = 'seongsu-passport:v1';
+// Separate map progress preserves the original fictional passport without transferring stamps.
+export const STORAGE_KEY = 'seongsu-passport:yeonmujang:v1';
 export interface Progress {
   version: 1;
   started: boolean;

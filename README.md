@@ -2,7 +2,7 @@
 
 A little Seoul. A lot to discover.
 
-성수의 붉은벽돌 골목에서 영감을 얻은 **브라우저 플레이 데모**입니다. 작은 도트 마을을 걷고, 다섯 장소의 이야기를 읽고, 가상 방문 도장을 모아 여권을 완성합니다.
+실제 성수역 남쪽 연무장길 일대를 걷는 **브라우저 플레이 데모**입니다. 쎈느·디올·탬버린즈·대림창고·무신사를 찾아가고, 가상 방문 도장을 모아 여권을 완성합니다.
 
 ## Run
 
@@ -33,10 +33,11 @@ Node.js 22.18+ 권장. 처음 설치할 때 프로젝트 루트에서 실행합�
 
 React 19 · TypeScript · Vite 8 · Phaser 3.90. 모든 픽셀 아트는 이 프로젝트에서 Canvas로 직접 그립니다. 서버 API·계정·외부 이미지·실시간 위치정보는 사용하지 않습니다.
 
-장소와 지도는 **가상의 데모 콘텐츠**입니다. 실제 지도 재현이나 영업정보가 아닙니다. 사진 영역은 준비 상태이며 실제 사진·3D 투어는 포함하지 않습니다. 오프라인 재로딩을 위한 서비스 워커도 포함하지 않습니다.
+도로 좌표는 OpenStreetMap에서 가져왔고, 매장 주소는 네이버 지도와 공식 정보로 확인했습니다. 길 폭·건물 외관·도착점은 게임을 위해 단순화했습니다. 상세에서 실제 주소와 네이버 지도 링크를 확인할 수 있습니다. 실사 사진·3D 투어·실시간 영업정보는 포함하지 않습니다. 오프라인 재로딩을 위한 서비스 워커도 포함하지 않습니다.
 
 ## Documentation
 
+- [실제 구역 조사와 출처](docs/REAL_NEIGHBORHOOD.md)
 - [구현 제안](docs/UI_DEMO_PLAN.md)
 - [구조와 책임](docs/ARCHITECTURE.md)
 - [실행 및 검증](docs/SETUP.md)
@@ -49,4 +50,4 @@ React 19 · TypeScript · Vite 8 · Phaser 3.90. 모든 픽셀 아트는 이 프
 
 Copyright © 2026 KnowAI — https://knowai.space
 
-GNU General Public License v3.0 only. See [LICENSE](LICENSE). Third-party packages and fonts retain their respective licenses.
+GNU General Public License v3.0 only. See [LICENSE](LICENSE). Third-party packages and fonts retain their respective licenses. Geographic data © OpenStreetMap contributors, ODbL 1.0; see [asset provenance](docs/ASSETS.md).

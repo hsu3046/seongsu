@@ -2,6 +2,8 @@
 
 외부 HTTP API는 없다. 환경 변수와 비밀키도 필요하지 않다.
 
+저장 키: `seongsu-passport:yeonmujang:v1`. 기존 가상 코스의 키는 보존한다.
+
 ## Progress v1
 
 | 필드 | 값 |
@@ -14,7 +16,7 @@
 | time | morning / afternoon / night |
 | position | 유한한 월드 좌표 x, y |
 
-장소 ID는 brick, butter, objects, courtyard, grove이다.
+장소 ID는 scene, dior, tamburins, daelim, musinsa이다.
 
 collectStamp(progress, id, nearby)는 시작된 산책에서 id와 nearby가 같을 때만 새 도장을 추가한다. 중복 방문이나 원격 열람은 진행도를 바꾸지 않는다. 브라우저 데모의 진행 규칙이며 서버 인증이나 실제 방문 증명 수단은 아니다.
 
@@ -42,4 +44,4 @@ collectStamp(progress, id, nearby)는 시작된 산책에서 id와 nearby가 같
 
 ## Failure states
 
-앱 렌더 오류에는 다시 불러오기 화면을 제공한다. 엔진 모듈 로드 실패나 WebGL 컨텍스트 소실에는 맵의 재시도 화면을 제공한다. 로컬 저장 실패는 산책을 차단하지 않는다. 사진 영역은 파일 로드에 의존하지 않는 명시적 준비 상태다.
+앱 렌더 오류에는 다시 불러오기 화면을 제공한다. 엔진 모듈 로드 실패나 WebGL 컨텍스트 소실에는 맵의 재시도 화면을 제공한다. 로컬 저장 실패는 산책을 차단하지 않는다. 장소 그림은 원본 Canvas 묘화 결과이며 실사 사진으로 표시하지 않는다.

@@ -1,7 +1,9 @@
 import type { CSSProperties } from 'react';
 
-export type IconName = 'passport' | 'compass' | 'arrow' | 'chevron' | 'coffee' | 'bakery' | 'objects' | 'courtyard' | 'garden' | 'sun' | 'sunrise' | 'moon' | 'pin' | 'check' | 'close' | 'plus' | 'minus' | 'target' | 'bookmark' | 'footsteps' | 'spark' | 'help' | 'clock' | 'reset' | 'photo' | 'expand' | 'contract' | 'sliders';
+export type IconName = 'passport' | 'compass' | 'arrow' | 'chevron' | 'coffee' | 'fashion' | 'fragrance' | 'bakery' | 'objects' | 'courtyard' | 'garden' | 'sun' | 'sunrise' | 'moon' | 'pin' | 'check' | 'close' | 'plus' | 'minus' | 'target' | 'bookmark' | 'footsteps' | 'spark' | 'help' | 'clock' | 'reset' | 'photo' | 'expand' | 'contract' | 'sliders';
 const paths: Record<IconName, string> = {
+  fashion: 'M4 8h16l1 13H3L4 8Zm4 1V6a4 4 0 0 1 8 0v3',
+  fragrance: 'M9 2h6v4H9V2Zm-2 7h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2Zm2 4h6v4H9v-4m3-7v3',
   expand: 'M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5',
   contract: 'M3 8h5V3m13 5h-5V3M8 21v-5H3m13 5v-5h5',
   sliders: 'M4 7h7m4 0h5M4 17h3m4 0h9M11 4v6M7 14v6',

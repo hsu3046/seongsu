@@ -7,7 +7,7 @@ const browser = await chromium.launch({ channel: 'chrome', headless: true });
 const artifacts = new URL('../artifacts/', import.meta.url);
 await mkdir(artifacts, { recursive: true });
 const report = { checks: [], errors: [] };
-const key = 'seongsu-passport:v1';
+const key = 'seongsu-passport:yeonmujang:v1';
 const pass = (name) => { report.checks.push(name); console.log('PASS: ' + name); };
 const read = (page) => page.evaluate((key) => JSON.parse(localStorage.getItem(key)), key);
 const ready = async (page) => {
@@ -68,14 +68,14 @@ try {
   assert.deepEqual((await read(page)).position, previous);
   pass('Tools change time/zoom; outside touch closes without click-through movement');
 
-  const pad = await page.getByRole('button', { name: 'Walk up', exact: true }).boundingBox();
+  const pad = await page.getByRole('button', { name: 'Walk left', exact: true }).boundingBox();
   const cdp = await mobile.newCDPSession(page);
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: pad.x + pad.width / 2, y: pad.y + pad.height / 2 }] });
   await page.waitForTimeout(450);
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
   // Position persistence is throttled to one second; sample only after release is saved.
   await page.waitForTimeout(1100);
-  await page.waitForFunction(({ key, y }) => JSON.parse(localStorage.getItem(key)).position.y < y - 10, { key, y: previous.y });
+  await page.waitForFunction(({ key, x }) => JSON.parse(localStorage.getItem(key)).position.x < x - 10, { key, x: previous.x });
   const moved = (await read(page)).position;
   await page.waitForTimeout(1100);
   assert.deepEqual((await read(page)).position, moved);
@@ -92,8 +92,8 @@ try {
   assert.ok(await canvas.evaluate((element) => element === document.querySelector('canvas')));
   pass('Touch/cancel, rotation and exit keep the same canvas, progress and page scroll');
 
-  await page.getByRole('button', { name: 'Walk here · Brick & Bean', exact: true }).click();
-  await page.locator('.arrival-button').waitFor({ timeout: 15000 });
+  await page.getByRole('button', { name: 'Walk here · Scène', exact: true }).click();
+  await page.locator('.arrival-button').waitFor({ timeout: 30000 });
   await page.getByRole('button', { name: 'Full screen', exact: true }).click();
   await fits(page);
   await page.locator('.arrival-button').tap();
@@ -102,7 +102,7 @@ try {
   assert.equal(await page.evaluate(() => scrollY), 0);
   await page.getByRole('button', { name: 'Stamp my passport', exact: true }).click();
   await page.getByRole('button', { name: 'Back to the neighborhood', exact: true }).click();
-  assert.deepEqual((await read(page)).visited, ['brick']);
+  assert.deepEqual((await read(page)).visited, ['scene']);
   pass('Entering a place exits fullscreen cleanly and still grants its stamp');
   await mobile.close();
 

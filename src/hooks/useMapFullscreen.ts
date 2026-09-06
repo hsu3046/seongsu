@@ -69,7 +69,7 @@ export function useMapFullscreen(enabled: boolean) {
       if (event.key === 'Escape') void exit();
       if (event.key !== 'Tab') return;
       // The fallback must also keep keyboard focus with the visible game controls.
-      const controls = Array.from(frame.current?.querySelectorAll<HTMLElement>('button:not(:disabled)') ?? [])
+      const controls = Array.from(frame.current?.querySelectorAll<HTMLElement>('button:not(:disabled), a[href]') ?? [])
         .filter((control) => control.getClientRects().length > 0);
       const first = controls[0];
       const last = controls.at(-1);

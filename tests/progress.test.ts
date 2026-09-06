@@ -13,11 +13,11 @@ test('missing, malformed, and future-version data produce a usable fresh passpor
 test('saved data cannot forge locations, duplicate stamps, or invalid coordinates', () => {
   const decoded = decodeProgress(JSON.stringify({
     version: 1, started: true, locale: 'xx', time: 'midnight',
-    visited: ['brick', 'brick', 'not-a-place', null], saved: ['grove', 'grove', 9],
+    visited: ['scene', 'scene', 'not-a-place', null], saved: ['musinsa', 'musinsa', 9],
     position: { x: -100, y: 'wrong' },
   }));
-  assert.deepEqual(decoded.visited, ['brick']);
-  assert.deepEqual(decoded.saved, ['grove']);
+  assert.deepEqual(decoded.visited, ['scene']);
+  assert.deepEqual(decoded.saved, ['musinsa']);
   assert.equal(decoded.locale, 'en');
   assert.equal(decoded.time, 'afternoon');
   assert.deepEqual(decoded.position, SPAWN);
@@ -25,13 +25,13 @@ test('saved data cannot forge locations, duplicate stamps, or invalid coordinate
 
 test('collecting requires a started walk and physical proximity, and is idempotent', () => {
   const fresh = freshProgress();
-  assert.equal(collectStamp(fresh, 'brick', 'brick'), fresh);
+  assert.equal(collectStamp(fresh, 'scene', 'scene'), fresh);
   const started = { ...fresh, started: true };
-  assert.equal(collectStamp(started, 'brick', null), started);
-  assert.equal(collectStamp(started, 'brick', 'butter'), started);
-  const visited = collectStamp(started, 'brick', 'brick');
-  assert.deepEqual(visited.visited, ['brick']);
-  assert.equal(collectStamp(visited, 'brick', 'brick'), visited);
+  assert.equal(collectStamp(started, 'scene', null), started);
+  assert.equal(collectStamp(started, 'scene', 'dior'), started);
+  const visited = collectStamp(started, 'scene', 'scene');
+  assert.deepEqual(visited.visited, ['scene']);
+  assert.equal(collectStamp(visited, 'scene', 'scene'), visited);
 });
 
 test('a complete walk and saved favorites survive serialization without losing settings', () => {
@@ -40,10 +40,10 @@ test('a complete walk and saved favorites survive serialization without losing s
     const collected = collectStamp(progress, place.id, place.id);
     progress = { ...collected, locale: 'ja', time: 'night' };
   }
-  const saved = toggleSaved(progress, 'courtyard');
+  const saved = toggleSaved(progress, 'daelim');
   assert.deepEqual(decodeProgress(JSON.stringify(saved)), saved);
   assert.equal(saved.visited.length, 5);
-  assert.deepEqual(toggleSaved(saved, 'courtyard').saved, []);
+  assert.deepEqual(toggleSaved(saved, 'daelim').saved, []);
 });
 
 test('every stop can be reached from spawn and from the preceding stop without crossing buildings', () => {
@@ -65,6 +65,18 @@ test('every stop can be reached from spawn and from the preceding stop without c
 });
 
 test('clicks inside buildings or outside the world do not create an impossible route', () => {
-  assert.deepEqual(findPath(SPAWN, { x: 350, y: 250 }), []);
+  assert.deepEqual(findPath(SPAWN, { x: places[0]!.building.x + places[0]!.building.w / 2, y: places[0]!.building.y + places[0]!.building.h / 2 }), []);
   assert.deepEqual(findPath(SPAWN, { x: -10, y: 500 }), []);
+});
+
+test('any itinerary order has a safe street route, including its first and last segment', () => {
+  const stops = [SPAWN, ...places.map((place) => place.entrance)];
+  for (const from of stops) for (const to of stops) {
+    const path = [from, ...findPath(from, to)];
+    assert.ok(path.length > 1, 'all pairs of stops must connect');
+    for (let i = 1; i < path.length; i++) {
+      const a = path[i - 1]!, b = path[i]!;
+      for (let t = 0; t <= 1; t += .2) assert.ok(canWalk({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }));
+    }
+  }
 });

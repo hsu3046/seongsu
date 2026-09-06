@@ -1,82 +1,98 @@
+import { footprints, project, streetArrival } from './geography.ts';
+import type { GeoPoint, Point } from './geography.ts';
+export { WORLD, SPAWN } from './geography.ts';
+export type { Point } from './geography.ts';
 export type Locale = 'en' | 'ja';
 export type TimeOfDay = 'morning' | 'afternoon' | 'night';
-export type PlaceKind = 'coffee' | 'bakery' | 'objects' | 'courtyard' | 'garden';
-export type PlaceId = 'brick' | 'butter' | 'objects' | 'courtyard' | 'grove';
-export interface Point { x: number; y: number }
+export type PlaceKind = 'coffee' | 'fashion' | 'fragrance';
+export type PlaceId = 'scene' | 'dior' | 'tamburins' | 'daelim' | 'musinsa';
 export interface Place {
-  id: PlaceId;
-  kind: PlaceKind;
-  number: string;
-  name: string;
-  localName: string;
-  color: string;
-  tint: string;
-  category: Record<Locale, string>;
-  note: Record<Locale, string>;
-  description: Record<Locale, string>;
-  detail: Record<Locale, string>;
-  moment: Record<Locale, string>;
-  entrance: Point;
-  building: { x: number; y: number; w: number; h: number };
+  id: PlaceId; kind: PlaceKind; number: string; name: string; localName: string; sign: string;
+  color: string; tint: string;
+  category: Record<Locale, string>; note: Record<Locale, string>;
+  description: Record<Locale, string>; detail: Record<Locale, string>; moment: Record<Locale, string>;
+  address: string; addressEn: string; source: string; sourceName: string; naverUrl: string;
+  location: GeoPoint; footprintIds: string[];
+  entrance: Point; building: { x: number; y: number; w: number; h: number };
+}
+type PlaceInput = Omit<Place, 'entrance' | 'building' | 'naverUrl'> & { street: string; naverId?: string };
+function place(input: PlaceInput): Place {
+  const points = footprints.filter((item) => input.footprintIds.includes(item.id)).flatMap((item) => item.points);
+  const center = project(input.location);
+  const xs = points.map((p) => p.x), ys = points.map((p) => p.y);
+  const x = points.length ? Math.min(...xs) : center.x - 40;
+  const y = points.length ? Math.min(...ys) : center.y - 30;
+  return { ...input,
+    entrance: streetArrival(input.location, input.street),
+    building: { x, y, w: points.length ? Math.max(...xs) - x : 80, h: points.length ? Math.max(...ys) - y : 60 },
+    naverUrl: input.naverId ? `https://map.naver.com/p/entry/place/${input.naverId}` : `https://map.naver.com/p/search/${encodeURIComponent(input.localName + ' ' + input.address)}`,
+  };
 }
 
+// Geographic anchors are OSM footprint centres/POIs, checked against Naver addresses.
+// `entrance` is a virtual arrival on the street, not a surveyed physical doorway.
 export const places: readonly Place[] = [
-  {
-    id: 'brick', kind: 'coffee', number: '01', name: 'Brick & Bean', localName: '브릭 앤 빈',
-    color: '#b6573f', tint: '#f2dfd0',
-    category: { en: 'Coffee & conversation', ja: 'コーヒーとおしゃべり' },
-    note: { en: 'Good coffee. Old bricks.', ja: '古いレンガと、おいしい一杯。' },
-    description: {
-      en: 'An old workshop, a new ritual. Follow the smell of freshly roasted beans into a little café built around the things worth keeping.',
-      ja: '古い工房に生まれた、新しい日常。焙煎したての香りに誘われて、大切なものを残した小さなカフェへ。',
-    },
-    detail: { en: 'Find a seat by the arched window. This is a place for slow sips, warm conversations, and absolutely no hurry.', ja: 'アーチ窓のそばに座って、ゆっくり一杯。おしゃべりを楽しんで。ここでは急がなくて大丈夫。' },
-    moment: { en: 'A quiet morning, a warm flat white.', ja: '静かな朝に、温かいフラットホワイト。' },
-    entrance: { x: 384, y: 456 }, building: { x: 272, y: 208, w: 224, h: 192 },
-  },
-  {
-    id: 'butter', kind: 'bakery', number: '02', name: 'Butter Notes', localName: '버터 노츠',
-    color: '#b08643', tint: '#f0e7c7',
-    category: { en: 'Something freshly baked', ja: '焼きたてのしあわせ' },
-    note: { en: 'Follow the buttery little trail.', ja: 'バターの香りをたどって。' },
-    description: { en: 'A butter-yellow awning, a handwritten menu, and the kind of smell that makes you change your plans. There is always room for one more pastry.', ja: 'バター色のひさしと手書きのメニュー。思わず予定を変えてしまう香り。ペストリーは、もうひとつだけ。' },
-    detail: { en: 'The tiny counter is the heart of the room. Watch the last batch come out of the oven, then take your treat back into the sunshine.', ja: '小さなカウンターが、このお店の中心。オーブンから焼き上がるのを眺めたら、おやつを持って日なたへ。' },
-    moment: { en: 'An afternoon pause, something flaky.', ja: '午後のひと休みに、サクサクのおやつ。' },
-    entrance: { x: 928, y: 456 }, building: { x: 816, y: 224, w: 224, h: 176 },
-  },
-  {
-    id: 'objects', kind: 'objects', number: '03', name: 'Objects & Days', localName: '오브젝트 앤 데이즈',
-    color: '#60736a', tint: '#e0e5d9',
-    category: { en: 'Objects with a story', ja: '物語のある道具' },
-    note: { en: 'Little things, thoughtfully made.', ja: '小さなものに、丁寧な想い。' },
-    description: { en: 'Everyday objects that ask you to look a little closer. A neighborhood studio for handmade ceramics, small editions, and happy discoveries.', ja: '毎日の道具を、少しだけじっくり見る。手作りの陶器や小さな作品に出会える、街角のスタジオ。' },
-    detail: { en: 'Look for the shelf of imperfect cups. Each piece carries the hand of its maker, and no two are quite the same.', ja: '少し不揃いなカップの棚を探してみて。作り手の手の跡が残り、同じものはひとつもありません。' },
-    moment: { en: 'Take home a story, even just in your head.', ja: '心の中に、小さな物語を持ち帰ろう。' },
-    entrance: { x: 928, y: 808 }, building: { x: 816, y: 576, w: 208, h: 176 },
-  },
-  {
-    id: 'courtyard', kind: 'courtyard', number: '04', name: 'Courtyard 05', localName: '코트야드 05',
-    color: '#9e664e', tint: '#eddfd4',
-    category: { en: 'A café, a little hidden', ja: '中庭の隠れ家カフェ' },
-    note: { en: 'A small escape between the bricks.', ja: 'レンガの間の、小さな逃避行。' },
-    description: { en: 'Turn off the main street and into a courtyard that feels like a secret. Brick walls, climbing greenery, and a table with your name on it.', ja: '大通りから曲がると、秘密のような中庭。レンガの壁、つる植物、そしてあなたを待つテーブル。' },
-    detail: { en: 'Stay until the little lamps switch on. The afternoon turns into evening gently here, one warm window at a time.', ja: '小さなランプが灯るまで、もう少し。窓に明かりがひとつずつ灯り、午後がゆっくり夜に変わります。' },
-    moment: { en: 'The last light of the day, out in the courtyard.', ja: '中庭で楽しむ、一日の最後の光。' },
-    entrance: { x: 384, y: 808 }, building: { x: 272, y: 576, w: 224, h: 176 },
-  },
-  {
-    id: 'grove', kind: 'garden', number: '05', name: 'Little Grove', localName: '작은 숲',
-    color: '#6b8155', tint: '#e1e8ce',
-    category: { en: 'A breath of green', ja: '緑の中で深呼吸' },
-    note: { en: 'A bench. A breeze. Just be.', ja: 'ベンチと、そよ風。それだけで。' },
-    description: { en: 'A pocket of green at the end of your little walk. Nothing to buy, nowhere to be. Just a few trees and a good place to catch your breath.', ja: '小さな散歩の終わりに、緑のポケット。買うものも、急ぐ用事もなく。木々に囲まれて、ひと息つこう。' },
-    detail: { en: 'You have wandered, discovered, and made a few memories. Pick a bench, open your passport, and look back at your day.', ja: '歩いて、見つけて、思い出を集めて。ベンチに座ってパスポートを開き、今日を振り返ってみよう。' },
-    moment: { en: 'A little room to breathe, any time of day.', ja: 'いつでも、深呼吸できる場所。' },
-    entrance: { x: 1152, y: 808 }, building: { x: 1056, y: 560, w: 192, h: 192 },
-  },
+  place({
+    id: 'scene', kind: 'coffee', number: '01', name: 'Scène', localName: '쎈느Scene', sign: 'SCÈNE',
+    color: '#707f75', tint: '#e2e6dd', street: '연무장5길',
+    address: '서울 성동구 연무장5길 20', addressEn: '20 Yeonmujang 5-gil, Seongdong-gu, Seoul',
+    location: { longitude: 127.05344595, latitude: 37.544902825 }, footprintIds: ['475986015'], naverId: '1030871168',
+    source: 'https://www.sceneseoul.com/', sourceName: 'Scène',
+    category: { en: 'Coffee & a terrace', ja: 'カフェとテラス' },
+    note: { en: 'A first pause off Achasan-ro.', ja: 'アチャサン路を曲がって、ひと休み。' },
+    description: { en: 'A café on Yeonmujang 5-gil, a short walk west from Seongsu Station exit 4. This is the northern stop of our little neighborhood walk.', ja: '聖水駅4番出口から西へ歩いた、ヨンムジャン5ギルのカフェ。この散歩の北側の寄り道です。' },
+    detail: { en: 'Continue south along the same lane to find Dior and Tamburins. Check Naver for current opening hours and events before visiting.', ja: '同じ路地を南へ進むと、ディオールとタンバリンズへ。営業時間やイベントは訪問前にNAVERで確認できます。' },
+    moment: { en: 'Notice how the narrow lane turns away from the station road.', ja: '駅前の大通りから、小さな路地への変化を楽しもう。' },
+  }),
+  place({
+    id: 'dior', kind: 'fashion', number: '02', name: 'Dior Seongsu', localName: '디올 성수', sign: 'DIOR',
+    color: '#807961', tint: '#ece8d8', street: '연무장5길',
+    address: '서울 성동구 연무장5길 7', addressEn: '7 Yeonmujang 5-gil, Seongdong-gu, Seoul',
+    location: { longitude: 127.05249915, latitude: 37.54401975 }, footprintIds: ['583441839'], naverId: '1289759192',
+    source: 'https://www.dior.com/fashion/stores/ko_kr/대한민국/seoul/7-yeonmujang-5-gil', sourceName: 'Dior',
+    category: { en: 'Fashion boutique', ja: 'ファッションブティック' },
+    note: { en: 'A fashion landmark beside the bend.', ja: '路地の曲がり角に、ファッションのランドマーク。' },
+    description: { en: 'Dior’s Seongsu boutique is at 7 Yeonmujang 5-gil. The official store directory lists both women’s and men’s collections.', ja: 'ヨンムジャン5ギル7にあるディオールの聖水ブティック。公式案内にはウィメンズとメンズの取り扱いが掲載されています。' },
+    detail: { en: 'Tamburins is nearby on the other side of this small junction. Follow the lane southwest to join Yeonmujang-gil.', ja: '小さな交差点の向こうにはタンバリンズ。路地を南西へたどると、ヨンムジャンギルにつながります。' },
+    moment: { en: 'Look for the contrast between a pale façade and the surrounding workshops.', ja: '明るいファサードと、周囲の建物のコントラストに注目。' },
+  }),
+  place({
+    id: 'tamburins', kind: 'fragrance', number: '03', name: 'Tamburins', localName: '탬버린즈 성수', sign: 'TAMBURINS',
+    color: '#9a8057', tint: '#eee5d2', street: '연무장5길',
+    address: '서울 성동구 연무장5길 8', addressEn: '8 Yeonmujang 5-gil, Seongdong-gu, Seoul',
+    location: { longitude: 127.05253835, latitude: 37.5437463 }, footprintIds: ['1229858813'], naverId: '1539672429',
+    source: 'https://www.tamburins.com/kr/store/korea/', sourceName: 'Tamburins',
+    category: { en: 'Fragrance & beauty', ja: 'フレグランスとビューティー' },
+    note: { en: 'A little detour for the senses.', ja: '香りに出会う、小さな寄り道。' },
+    description: { en: 'The brand’s Seongsu store is at 8 Yeonmujang 5-gil. It is a separate location from Tamburins Haus Nowhere on Ttukseom-ro.', ja: 'ヨンムジャン5ギル8にある聖水店。トゥクソム路のハウスノーウェア店とは別の場所です。' },
+    detail: { en: 'From this corner, head down to Yeonmujang-gil and follow it east toward Seongsui-ro and the two warehouse stops.', ja: 'この角からヨンムジャンギルへ。東へ歩くと、ソンスイ路沿いの2つの倉庫スポットに出会えます。' },
+    moment: { en: 'The next stretch is about the street: shopfronts, side lanes, and a changing neighborhood.', ja: '次は街並みを楽しむ時間。店先や脇道を眺めながら歩こう。' },
+  }),
+  place({
+    id: 'daelim', kind: 'coffee', number: '04', name: 'Daelim Changgo', localName: '성수동대림창고갤러리', sign: 'DAELIM CHANGGO',
+    color: '#af674e', tint: '#eddfd3', street: '성수이로',
+    address: '서울 성동구 성수이로 78', addressEn: '78 Seongsui-ro, Seongdong-gu, Seoul',
+    location: { longitude: 127.0564591, latitude: 37.5418247 }, footprintIds: ['801819178'], naverId: '37910590',
+    source: 'https://english.visitkorea.or.kr/svc/contents/contentsView.do?vcontsId=112805', sourceName: 'VISITKOREA',
+    category: { en: 'Warehouse café & gallery', ja: '倉庫カフェとギャラリー' },
+    note: { en: 'Red bricks with another life.', ja: '赤いレンガに、新しい日常。' },
+    description: { en: 'A café and gallery in a former rice mill. VISITKOREA traces the red-brick building to the 1970s and highlights its preserved warehouse character.', ja: 'かつての精米所を利用したカフェとギャラリー。韓国観光公社は、1970年代の赤レンガ建築と残された倉庫の雰囲気を紹介しています。' },
+    detail: { en: 'This café is at number 78. The nearby MUSINSA store at number 74 is a different stop, even though both use the Daelim Changgo name.', ja: 'カフェの住所は78番。近くの74番にあるMUSINSAとは、同じ大林倉庫の名を持つ別のスポットです。' },
+    moment: { en: 'Pause at the warehouse corner where Yeonmujang-gil meets Seongsui-ro.', ja: 'ヨンムジャンギルとソンスイ路が交わる、倉庫の角でひと休み。' },
+  }),
+  place({
+    id: 'musinsa', kind: 'fashion', number: '05', name: 'MUSINSA Seongsu', localName: '무신사 스토어 성수', sign: 'MUSINSA',
+    color: '#515d58', tint: '#dfe3dd', street: '성수이로',
+    address: '서울 성동구 성수이로 74', addressEn: '74 Seongsui-ro, Seongdong-gu, Seoul',
+    // Approximate anchor of the paired warehouse footprints, visually checked in Naver.
+    location: { longitude: 127.056393, latitude: 37.54156 }, footprintIds: ['801819180', '801819181'], naverId: '1107729911',
+    source: 'https://www.musinsa.com/cms/news/view/13353', sourceName: 'MUSINSA',
+    category: { en: 'Fashion in a warehouse', ja: '倉庫で楽しむファッション' },
+    note: { en: 'Two rooflines. A new chapter.', ja: '2つの屋根に、新しい物語。' },
+    description: { en: 'MUSINSA opened its Seongsu @ Daelim Changgo store in September 2024. Its paired warehouse roofs give this fashion and sneaker store a distinctive outline.', ja: '2024年9月にオープンしたMUSINSA聖水＠大林倉庫。並んだ倉庫の屋根が印象的な、ファッションとスニーカーのストアです。' },
+    detail: { en: 'This is the southern stop of our walk. Follow Seongsui-ro north to return toward Seongsu Station exit 3.', ja: 'この散歩の南側のスポット。ソンスイ路を北へ進むと、聖水駅3番出口方面へ戻れます。' },
+    moment: { en: 'Look back along Seongsui-ro before opening your finished passport.', ja: 'ソンスイ路を振り返ったら、集めたパスポートを開こう。' },
+  }),
 ];
-
 export const placeIds = places.map((place) => place.id);
 export const findPlace = (id: PlaceId): Place => places.find((place) => place.id === id)!;
-export const WORLD = { width: 1280, height: 1024 };
-export const SPAWN: Point = { x: 640, y: 592 };
